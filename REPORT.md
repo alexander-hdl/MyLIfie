@@ -8,7 +8,7 @@
 >
 > **Связанные файлы:**
 > - [MINDMAP.md](MINDMAP.md) — ментальная карта исследования (Mermaid, открывается на GitHub);
-> - [mindmap.html](mindmap.html) — интерактивная версия карты (поиск, фильтр по доказательности, карточки методик);
+> - [mindmap.html](mindmap.html) — интерактивная версия карты (поиск, фильтр по доказательности, карточки методик); опубликованная версия: https://claude.ai/artifact/Sgoemay97nbbjP5qBgwuPD;
 > - [research/01_classic_methods.md](research/01_classic_methods.md) — подробный разбор 21 классической методики;
 > - [research/02_modern_science.md](research/02_modern_science.md) — современные научные подходы (хронобиология, внимание, привычки, сон, AI, СДВГ);
 > - [research/03_personalization_balance.md](research/03_personalization_balance.md) — типология человека, профессии, хобби, спорт, семья, дети, недельные квоты.

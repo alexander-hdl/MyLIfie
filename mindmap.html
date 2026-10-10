@@ -1,0 +1,2761 @@
+<title>Карта плана дня</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Literata:opsz,wght@7..72,500..700&display=swap">
+<style>
+/* Концепция: атлас-чертёж. Карта местности с градусной сеткой, рамкой-неатлайном,
+   условными обозначениями A/B/C и одним акцентом цвета синьки. */
+:root {
+  --bg: #E6ECEA;
+  --surface: #F6F8F7;
+  --surface-2: #E9EFED;
+  --ink: #15262B;
+  --ink-2: #3F545A;
+  --ink-3: #566A70;
+  --line: #C3CFCC;
+  --grid: #DAE2DF;
+  --accent: #245B8C;
+  --accent-soft: #D3E3F1;
+  --on-accent: #F6F8F7;
+  --focus: #245B8C;
+  --a: #17673F;
+  --a-bg: #D1EADB;
+  --b: #7C5309;
+  --b-bg: #F1E2BC;
+  --c: #4D5F66;
+  --c-bg: #E0E6E8;
+  --shadow-panel: 0 -10px 30px -12px #10202640;
+  --f-display: 'Literata', 'PT Serif', Georgia, 'Times New Roman', serif;
+  --f-ui: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1416;
+    --surface: #131C1F;
+    --surface-2: #1A2629;
+    --ink: #E4ECEB;
+    --ink-2: #B1C1C3;
+    --ink-3: #8FA2A6;
+    --line: #2C3D41;
+    --grid: #1A272A;
+    --accent: #84B8E6;
+    --accent-soft: #1C3346;
+    --on-accent: #0D1416;
+    --focus: #84B8E6;
+    --a: #76D0A0;
+    --a-bg: #1A3A29;
+    --b: #E3B660;
+    --b-bg: #3A2F14;
+    --c: #A1B2B8;
+    --c-bg: #243136;
+    --shadow-panel: 0 -10px 30px -12px #000000AA;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1416;
+  --surface: #131C1F;
+  --surface-2: #1A2629;
+  --ink: #E4ECEB;
+  --ink-2: #B1C1C3;
+  --ink-3: #8FA2A6;
+  --line: #2C3D41;
+  --grid: #1A272A;
+  --accent: #84B8E6;
+  --accent-soft: #1C3346;
+  --on-accent: #0D1416;
+  --focus: #84B8E6;
+  --a: #76D0A0;
+  --a-bg: #1A3A29;
+  --b: #E3B660;
+  --b-bg: #3A2F14;
+  --c: #A1B2B8;
+  --c-bg: #243136;
+  --shadow-panel: 0 -10px 30px -12px #000000AA;
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.45 var(--f-ui);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+*, *::before, *::after { box-sizing: border-box; }
+button, input { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, .chip:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.app {
+  height: 100%;
+  min-height: 560px;
+  max-width: 1680px;
+  margin-inline: auto;
+  padding-inline: 16px;
+  padding-block: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* шапка */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 20px; }
+.eyebrow { margin: 0 0 3px; font: 500 11px/1.2 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+h1 { margin: 0; font: 600 clamp(19px, 2.4vw, 27px)/1.15 var(--f-display); letter-spacing: -.005em; text-wrap: balance; }
+.meta { margin: 0; font: 500 12px/1.3 var(--f-mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* панель инструментов */
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.search { position: relative; flex: 1 1 240px; max-width: 430px; min-width: 0; }
+.search input {
+  width: 100%; height: 36px; padding: 0 74px 0 12px;
+  border: 1px solid var(--ink-3); border-radius: 3px;
+  background: var(--surface); font-size: 14.5px;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.search input::placeholder { color: var(--ink-3); }
+.search .cnt { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font: 500 11.5px var(--f-mono); color: var(--ink-3); pointer-events: none; font-variant-numeric: tabular-nums; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn {
+  height: 36px; padding: 0 12px; border: 1px solid var(--ink-3); border-radius: 3px;
+  background: var(--surface); cursor: pointer; font-weight: 500; font-size: 13px; white-space: nowrap;
+}
+.btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.legend .lab { font: 500 11px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-right: 2px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 10px 0 7px;
+  border: 1px solid var(--line); border-radius: 3px; background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 500;
+}
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.chip .k { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 3px; border: 1.2px solid var(--ink-3); border-radius: 3px; font: 500 11px/1 var(--f-mono); }
+.chip.ca .k { color: var(--a); background: var(--a-bg); border-color: var(--a); }
+.chip.cb .k { color: var(--b); background: var(--b-bg); border-color: var(--b); }
+.chip.cc .k { color: var(--c); background: var(--c-bg); border-color: var(--c); border-style: dashed; }
+.chip .n { font: 500 11px var(--f-mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.sym { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-2); margin-left: 4px; }
+.sym i { font-style: normal; display: inline-grid; place-items: center; min-width: 18px; height: 16px; border: 1.2px solid var(--ink-3); border-radius: 3px; font: 500 11px/1 var(--f-mono); color: var(--ink-2); background: var(--surface); }
+
+/* сцена */
+.stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.stage.has-panel { grid-template-columns: minmax(0, 1fr) minmax(310px, 370px); }
+.mapwrap { position: relative; min-width: 0; min-height: 0; background: var(--surface); border: 1px solid var(--ink-3); overflow: hidden; }
+.mapwrap::after { content: ""; position: absolute; inset: 5px; border: 1px solid var(--line); pointer-events: none; }
+#svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#svg:active { cursor: grabbing; }
+.hint { position: absolute; left: 14px; bottom: 14px; max-width: min(430px, calc(100% - 90px)); padding: 5px 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-3); font-size: 12px; line-height: 1.4; pointer-events: none; z-index: 2; }
+.zoomctl { position: absolute; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
+.zoomctl button { width: 34px; height: 34px; border: 1px solid var(--ink-3); border-radius: 3px; background: var(--surface); cursor: pointer; font: 500 18px/1 var(--f-ui); }
+.zoomctl button:hover { background: var(--accent-soft); border-color: var(--accent); }
+.empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--ink-3); pointer-events: none; }
+
+/* карточка */
+.panel { min-width: 0; min-height: 0; overflow: auto; background: var(--surface); border: 1px solid var(--ink-3); padding: 16px 18px 20px; overscroll-behavior: contain; }
+.ptitle { min-width: 0; }
+.phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.crumb { margin: 0 0 6px; font: 500 11px/1.4 var(--f-mono); letter-spacing: .04em; color: var(--ink-3); overflow-wrap: anywhere; }
+.panel h2 { margin: 0; font: 600 20px/1.2 var(--f-display); text-wrap: balance; overflow-wrap: anywhere; }
+.panel h2:focus { outline: none; }
+.close { flex: none; width: 36px; height: 36px; border: 1px solid var(--ink-3); border-radius: 3px; background: var(--surface); cursor: pointer; font-size: 20px; line-height: 1; }
+.close:hover { background: var(--accent-soft); border-color: var(--accent); }
+.badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 12px 0 2px; }
+.bdg { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px; border: 1.2px solid var(--ink-3); border-radius: 3px; font-size: 12.5px; font-weight: 500; background: var(--surface); }
+.bdg b { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 3px; border-radius: 2px; font: 500 11.5px/1 var(--f-mono); color: var(--on-accent); background: var(--ink-3); }
+.bdg.ba { border-color: var(--a); color: var(--a); background: var(--a-bg); } .bdg.ba b { background: var(--a); }
+.bdg.bb { border-color: var(--b); color: var(--b); background: var(--b-bg); } .bdg.bb b { background: var(--b); }
+.bdg.bc { border-color: var(--c); color: var(--c); background: var(--c-bg); border-style: dashed; } .bdg.bc b { background: var(--c); }
+.bdg.bn { color: var(--ink-2); }
+.bnote { font-size: 12px; color: var(--ink-3); margin: 6px 0 0; }
+.sec { margin-top: 16px; }
+.sec h3 { margin: 0 0 4px; font: 500 11px/1.2 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.sec p { margin: 0; font-size: 14.5px; line-height: 1.55; max-width: 62ch; overflow-wrap: anywhere; }
+.sec.how p { padding-left: 11px; border-left: 2px solid var(--accent); }
+.sec.src p { font-size: 13px; color: var(--ink-2); }
+
+/* svg */
+.gline { fill: none; stroke: var(--grid); stroke-width: 1; }
+.link { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.link.hot { stroke: var(--accent); }
+.node { cursor: pointer; outline: none; }
+.node .bg { fill: transparent; stroke: transparent; stroke-width: 1.5; }
+.node:hover .bg { fill: var(--surface-2); }
+.node.match .bg, .node.sel .bg { fill: var(--accent-soft); stroke: var(--accent); }
+.node:focus-visible .bg { stroke: var(--focus); stroke-width: 2.5; fill: var(--surface-2); }
+.node .rootbg { fill: var(--accent); stroke: var(--accent); }
+.node:hover .rootbg, .node:focus-visible .rootbg { fill: var(--accent); }
+.node:focus-visible .rootbg { stroke: var(--ink); stroke-width: 3; }
+.lbl { fill: var(--ink); dominant-baseline: central; }
+.t-root .lbl { fill: var(--on-accent); font: 600 15px var(--f-display); }
+.t-branch .lbl { font: 600 14.5px var(--f-ui); }
+.t-group .lbl { font: 600 13.5px var(--f-ui); }
+.t-leaf .lbl { font: 400 13px var(--f-ui); }
+.subtxt { fill: var(--ink-3); font: 400 11.5px var(--f-ui); dominant-baseline: central; }
+.chiptxt { fill: var(--ink-3); font: 500 11px var(--f-mono); dominant-baseline: central; }
+.gm { fill: var(--accent); stroke: var(--accent); stroke-width: 1.6; }
+.open > .mk .gm { fill: var(--surface); }
+.pill { stroke-width: 1.2; fill: var(--surface); stroke: var(--ink-3); }
+.pt { font: 500 10.5px var(--f-mono); text-anchor: middle; dominant-baseline: central; fill: var(--ink-2); }
+.ev-A .pill { fill: var(--a-bg); stroke: var(--a); } .ev-A .pt { fill: var(--a); }
+.ev-B .pill { fill: var(--b-bg); stroke: var(--b); } .ev-B .pt { fill: var(--b); }
+.ev-C .pill { fill: var(--c-bg); stroke: var(--c); stroke-dasharray: 3 2; } .ev-C .pt { fill: var(--c); }
+.pt .l-A { fill: var(--a); } .pt .l-B { fill: var(--b); } .pt .l-C { fill: var(--c); } .pt .sl { fill: var(--ink-3); }
+.nodot { fill: none; stroke: var(--ink-3); stroke-width: 1.3; }
+.searching .node:not(.match):not(.anc) { opacity: .38; }
+.searching .link { opacity: .5; }
+.enter-anim { animation: fadein .25s ease both; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 760px) {
+  .app { padding-block: 10px; gap: 8px; min-height: 520px; }
+  .eyebrow, .meta { display: none; }
+  h1 { font-size: 18px; }
+  .search { max-width: none; flex-basis: 100%; }
+  .search input { font-size: 16px; }
+  .btns { width: 100%; }
+  .btn { flex: 1 1 auto; padding: 0 8px; }
+  .legend .lab, .sym { display: none; }
+  .chip { height: 34px; padding-right: 9px; }
+  .chip .n { display: none; }
+  .stage.has-panel { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 50%; z-index: 5; box-shadow: var(--shadow-panel); border-bottom-width: 0; padding: 14px 16px 22px; }
+  .panel h2 { font-size: 18px; }
+  .close { width: 40px; height: 40px; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Атлас методик · 168 часов в неделе</p>
+      <h1>План дня: исследование и система</h1>
+    </div>
+    <p class="meta" id="meta"></p>
+  </header>
+
+  <section class="tools" aria-label="Управление картой">
+    <div class="search">
+      <label for="q" class="sr">Поиск по узлам карты</label>
+      <input id="q" type="search" placeholder="Найти узел: Pomodoro, сон, дети" autocomplete="off" enterkeyhint="search">
+      <span class="cnt" id="cnt" aria-live="polite"></span>
+    </div>
+    <div class="btns">
+      <button class="btn" id="bExpand" type="button">Развернуть всё</button>
+      <button class="btn" id="bCollapse" type="button">Свернуть</button>
+      <button class="btn" id="bReset" type="button">Сбросить вид</button>
+    </div>
+    <div class="legend" role="group" aria-label="Фильтр по уровню доказательности">
+      <span class="lab">Условные обозначения</span>
+      <button class="chip" id="fAll" type="button" aria-pressed="true" title="Показать все узлы">Все</button>
+      <button class="chip ca" data-ev="A" type="button" aria-pressed="false" title="Мета-анализы, консенсусы ВОЗ, AASM, AAP, устойчивые закономерности"><span class="k">A</span>сильная<span class="n"></span></button>
+      <button class="chip cb" data-ev="B" type="button" aria-pressed="false" title="Отдельные эксперименты и RCT, обзоры с противоречиями, крупные наблюдательные данные"><span class="k">B</span>умеренная<span class="n"></span></button>
+      <button class="chip cc" data-ev="C" type="button" aria-pressed="false" title="Книги, авторские системы, экспертное мнение, косвенная база"><span class="k">C</span>слабая<span class="n"></span></button>
+      <span class="sym"><i>A/B</i>смешанная</span>
+      <span class="sym"><i>×</i>миф</span>
+      <span class="sym"><i>·</i>оценки нет</span>
+    </div>
+  </section>
+
+  <main class="stage" id="stage">
+    <div class="mapwrap" id="mapwrap">
+      <svg id="svg" role="group" aria-label="Интерактивная карта исследования">
+        <defs>
+          <pattern id="grat" width="120" height="120" patternUnits="userSpaceOnUse"><path class="gline" d="M120 0H0V120"/></pattern>
+        </defs>
+        <g id="layer">
+          <rect x="-8000" y="-8000" width="16000" height="16000" fill="url(#grat)" pointer-events="none"/>
+          <g id="links"></g>
+          <g id="nodes"></g>
+        </g>
+      </svg>
+      <div class="empty" id="empty" hidden>Нет узлов с таким уровнем доказательности.</div>
+      <div class="hint" id="hint">Клик по ветви раскрывает её, клик по листу открывает карточку. Колесо мыши меняет масштаб, перетаскивание сдвигает карту.</div>
+      <div class="zoomctl">
+        <button type="button" id="zIn" aria-label="Увеличить">+</button>
+        <button type="button" id="zOut" aria-label="Уменьшить">−</button>
+      </div>
+    </div>
+    <aside class="panel" id="panel" hidden aria-label="Карточка узла">
+      <div class="phead">
+        <div class="ptitle">
+          <p class="crumb" id="pCrumb"></p>
+          <h2 id="pTitle" tabindex="-1"></h2>
+        </div>
+        <button class="close" id="pClose" type="button" aria-label="Закрыть карточку">×</button>
+      </div>
+      <div class="badges" id="pBadges"></div>
+      <p class="bnote" id="pNote" hidden></p>
+      <div class="sec" id="sDesc"><h3>Суть</h3><p id="pDesc"></p></div>
+      <div class="sec how" id="sHow"><h3>Как применить</h3><p id="pHow"></p></div>
+      <div class="sec src" id="sSrc"><h3>Источник</h3><p id="pSrc"></p></div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var DATA = {
+ "name": "План дня: исследование и система",
+ "children": [
+  {
+   "name": "Что говорит наука в целом",
+   "children": [
+    {
+     "name": "Мета-анализ Aeon et al., 2021",
+     "ev": "A",
+     "desc": "158 исследований, около 54 тыс. участников. Тайм-менеджмент умеренно связан с рабочей и учебной результативностью, но сильнее связан с благополучием (особенно с удовлетворённостью жизнью) и с меньшим дистрессом. Из личностных черт заметна только добросовестность.",
+     "how": "Ждите от плана прежде всего спокойствия и ощущения контроля, прирост продуктивности идёт следом. Это довод в пользу баланса работа / семья / спорт.",
+     "src": "Aeon, Faber & Panaccio (2021), PLOS ONE 16(1): e0245066"
+    },
+    {
+     "name": "Обзор Claessens и др., 2007",
+     "desc": "32 эмпирических исследования 1982–2004 годов. Тайм-менеджмент связан с воспринимаемым контролем времени, удовлетворённостью работой и здоровьем, а со стрессом связан отрицательно. Связь с результативностью неясна, обучение навыкам не переходит в результат автоматически.",
+     "how": "Внедряйте по одному элементу системы за раз, каждый 3–4 недели, а не всё сразу.",
+     "src": "Claessens, van Eerde, Rutte & Roe (2007), Personnel Review 36(2): 255–276"
+    },
+    {
+     "name": "Теория постановки целей",
+     "ev": "A",
+     "desc": "Конкретные и трудные цели дают лучший результат, чем «сделай как можно лучше». Это одна из самых проверенных теорий организационной психологии и опора для SMART и OKR.",
+     "how": "Формулируйте цели конкретно и отслеживайте прогресс.",
+     "src": "Locke & Latham (1990; 2002), American Psychologist 57(9): 705–717"
+    },
+    {
+     "name": "Механизмы проверены лучше брендов",
+     "children": [
+      {
+       "name": "If–then планы: d ≈ 0,65",
+       "ev": "A",
+       "desc": "Метаанализ 94 независимых тестов: план вида «если X, то делаю Y» с временем и местом заметно повышает достижение целей. d = 0,65 — стандартизированная разница средних, а не «+65 % успеха». Более поздние мета-анализы дают меньшие эффекты.",
+       "how": "Записывайте каждый ключевой пункт с временем и местом и добавляйте план на препятствия.",
+       "src": "Gollwitzer & Sheeran (2006), Advances in Experimental Social Psychology 38: 69–119"
+      },
+      {
+       "name": "Незавершённые цели и записанный план",
+       "ev": "B",
+       "desc": "Незавершённые цели вызывают навязчивые мысли и мешают другим задачам. Записанный конкретный план снимает этот эффект, даже если дело ещё не сделано. Тревогу как таковую планирование не снижало.",
+       "how": "Выгружайте открытые дела в план вечером: так работают GTD, Айви Ли, Bullet Journal и shutdown-ритуал.",
+       "src": "Masicampo & Baumeister (2011), JPSP 101(4): 667–683"
+      },
+      {
+       "name": "Ошибка планирования",
+       "ev": "A",
+       "desc": "Люди систематически недооценивают время на собственные задачи. У студентов-дипломников лучший прогноз был 33,9 дня, фактически ушло 55,5; в свой прогноз уложились около 30 %.",
+       "how": "Закладывайте множитель ×1,5 к первой оценке и буфер в каждом дне.",
+       "src": "Buehler, Griffin & Ross (1994), JPSP 67(3): 366–381"
+      },
+      {
+       "name": "Издержки переключения задач",
+       "ev": "A",
+       "desc": "Каждое переключение стоит времени, и тем больше, чем сложнее задачи. Сам феномен многократно воспроизведён, а конкретные проценты потерь остаются экспертными оценками.",
+       "how": "Одна задача на блок, почта и мессенджеры пакетами.",
+       "src": "Rubinstein, Meyer & Evans (2001), JEP: HPP 27(4): 763–797"
+      }
+     ]
+    },
+    {
+     "name": "Шкала доказательности",
+     "children": [
+      {
+       "name": "A — сильная",
+       "ev": "A",
+       "desc": "Мета-анализы, многоцентровые preregistered-исследования, официальные консенсусы (AASM, AAP, ВОЗ), устойчивые физиологические закономерности.",
+       "how": "Опирайтесь на уровень A в первую очередь.",
+       "src": "02_modern_science.md, раздел 0"
+      },
+      {
+       "name": "B — умеренная",
+       "ev": "B",
+       "desc": "Отдельные RCT и лабораторные эксперименты, систематические обзоры с противоречивыми результатами, крупные наблюдательные исследования без доказанной причинности.",
+       "how": "Относитесь как к рабочей гипотезе и проверяйте на себе 2–3 недели.",
+       "src": "02_modern_science.md, раздел 0"
+      },
+      {
+       "name": "C — слабая",
+       "ev": "C",
+       "desc": "Популярные книги, авторские системы, экспертное мнение, опыт практиков. Уровень C не значит «бесполезно»: многие системы упаковывают механизмы уровня A/B. Плохо только выдавать их за «доказанные наукой».",
+       "how": "Берите как набор идей и язык для разговора, а не как закон.",
+       "src": "02_modern_science.md, раздел 0"
+      },
+      {
+       "name": "Как переведены оценки",
+       "desc": "Классические методики и раздел персонализации оценены словами «сильная», «средняя», «слабая». На карте они приведены к единой шкале: сильная = A, средняя = B, слабая = C. Смешанные оценки («слабая или средняя», «сильная для теории, слабая для акронима») записаны как B/C и A/C.",
+       "how": "Серый маркер без буквы означает, что в источнике оценка не дана.",
+       "src": "01_classic_methods.md, 03_personalization_balance.md"
+      }
+     ]
+    },
+    {
+     "name": "Пять правил хорошего дня",
+     "children": [
+      {
+       "name": "Строить день от сна назад",
+       "ev": "A",
+       "desc": "Сначала фиксируется время подъёма (в выходные не более 1 ч разницы), затем отсчитываются 7–9 ч сна для взрослого и возрастная норма для ребёнка. Утром дневной свет, вечером приглушённый тёплый.",
+       "how": "Все остальные блоки размещайте в оставшемся окне.",
+       "src": "AASM 2015/2016, NSF 2015, AAP 2014"
+      },
+      {
+       "name": "Защитить одно окно пика",
+       "ev": "A/B",
+       "desc": "В своё время пика ставятся 1–3 блока по 60–90 минут на главное дело без уведомлений и встреч. Рутину и встречи — в послеобеденный спад, креатив — в «восстановление».",
+       "how": "Не дробите пиковое окно встречами и почтой.",
+       "src": "Издержки переключения (A); синхрония, attention residue, post-lunch dip (B)"
+      },
+      {
+       "name": "Каждый важный пункт — «если–то»",
+       "ev": "A",
+       "desc": "Не «потренироваться», а «в 18:30 после того, как уложу младшего, 30 минут в зале у дома; если не заснул — 15 минут дома с гантелями». Для главного дела полезен WOOP, новые привычки привязывают к якорям и ждут 2–3 месяца.",
+       "how": "Пишите время, место и запасной вариант.",
+       "src": "Gollwitzer & Sheeran 2006; Wang et al. 2021; Lally 2010; Singh 2024"
+      },
+      {
+       "name": "Планировать меньше, чем кажется",
+       "ev": "A",
+       "desc": "Множитель ×1,5 и буфер 20–30 %. День ограничивают примерно 3–5 значимыми задачами, активные проекты — 3–4. Сначала в календарь идут неперемещаемые блоки: сон, семья, спорт.",
+       "how": "Сначала блоки ценностей, потом глубокая работа, потом остальное.",
+       "src": "Kahneman & Tversky 1979; Buehler et al. 1994"
+      },
+      {
+       "name": "Закрывать день и неделю",
+       "ev": "B",
+       "desc": "10–20 минут в конце рабочего дня: что сделано, что переносится, первый шаг на завтра. Перед переключением заметка возобновления, перед сном короткий конкретный список, раз в неделю обзор с семейной координацией.",
+       "how": "Поставьте закрытие в календарь как встречу.",
+       "src": "Masicampo & Baumeister 2011; Leroy & Glomb 2018; Scullin et al. 2018"
+      }
+     ]
+    }
+   ],
+   "sub": "Мета-анализы, механизмы и шкала A/B/C"
+  },
+  {
+   "name": "Классические методики",
+   "children": [
+    {
+     "name": "Приоритизация",
+     "children": [
+      {
+       "name": "Метод Айви Ли",
+       "ev": "C",
+       "desc": "В конце дня выписать до шести самых важных дел на завтра по порядку важности и утром работать строго по очереди, без многозадачности; невыполненное переносится. История про 25 000 долларов от Шваба — корпоративная легенда без первоисточника, зато механизмы метода подтверждены (по ним оценка средняя).",
+       "how": "Вечером 10–15 минут на список; родителям и сменным реалистичнее 3–4 пункта; встречи держите в календаре, не в шестёрке.",
+       "src": "J. Clear, «The Ivy Lee Method»; Fortune, 2022"
+      },
+      {
+       "name": "Матрица Эйзенхауэра",
+       "ev": "C",
+       "desc": "Задачи по осям важности и срочности: сделать, запланировать, делегировать, удалить. Проблему, которую решает матрица, подтвердили эксперименты: люди выбирают задачи, лишь выглядящие срочными, даже когда есть более выгодная альтернатива.",
+       "how": "Квадранту «важно, но не срочно» (здоровье, отношения, развитие) выделите фиксированный блок 60–90 минут.",
+       "src": "Zhu, Yang & Hsee (2018), Journal of Consumer Research 45(3): 673–690"
+      },
+      {
+       "name": "ABCDE (Брайан Трейси)",
+       "ev": "C",
+       "desc": "A — обязательно, B — желательно, C — приятно, D — делегировать, E — устранить; к B не переходят, пока есть невыполненные A. Специальных исследований метода нет.",
+       "how": "Пометьте задачи по последствиям, A-1 станет «лягушкой», D передайте сразу, E вычеркните.",
+       "src": "B. Tracy, «Eat That Frog!», 2001; A. Lakein, 1973"
+      },
+      {
+       "name": "Съешь лягушку",
+       "ev": "C",
+       "desc": "Самую важную и обычно самую неприятную задачу делать первой. Популярный довод «сила воли с утра полна» ослаблен: ego depletion почти не воспроизвёлся. Лучше подтверждены «сделай до отвлечений» и синхрония с хронотипом.",
+       "how": "Ешьте лягушку в первое защищённое окно и в свой пик, не обязательно в 8:00; сову и родителя с утренними сборами это особенно касается.",
+       "src": "B. Tracy, «Eat That Frog!», 2001; Hagger et al. 2016"
+      },
+      {
+       "name": "Принцип Парето 80/20",
+       "ev": "B/C",
+       "desc": "Небольшая доля причин даёт большую долю результата, цифры условны. Явление (степенные распределения) встречается повсюду, а исследований применения к личному списку дел нет. Не подходит ролям, где важна полнота: врач, пилот, отчётность.",
+       "how": "Найдите 1–2 задачи «из 20 %» и поставьте в лучшие часы; остальным дайте рамку «достаточно хорошо».",
+       "src": "Pareto (1896–1897); J. Juran (1940–1950-е)"
+      },
+      {
+       "name": "Правило 1-3-5",
+       "ev": "C",
+       "desc": "За день реально сделать 1 большую, 3 средние и 5 маленьких задач. Популярная эвристика без исследований, первоисточник не проверен.",
+       "how": "Включайте нерабочие пункты: тренировка — средняя, звонок маме — маленькая; в день со встречами сократите до 0-2-3.",
+       "src": "The Muse (около 2013–2014), без проверенного источника"
+      }
+     ]
+    },
+    {
+     "name": "Целостные системы",
+     "children": [
+      {
+       "name": "Система Франклина",
+       "ev": "C",
+       "desc": "Пирамида «ценности → долгосрочные цели → промежуточные цели → ежедневные задачи» с утренним вопросом «Какое добро я сделаю сегодня?» и вечерним «Какое добро я сделал?». Поддержка косвенная: теория целей и «самосогласованные цели».",
+       "how": "Выпишите 5–7 ценностей и помечайте, к какой относится задача дня; ценность без задач неделю — сигнал.",
+       "src": "Б. Франклин, «Автобиография»; H. Smith (1994); Sheldon & Elliot (1999)"
+      },
+      {
+       "name": "Кови: роли и большие камни",
+       "ev": "C",
+       "desc": "Планировать нужно неделю, а не день. 5–7 ролей, для каждой 1–2 «больших камня» на неделю, и камни ставятся в календарь первыми. Лучший классический инструмент именно для баланса работа / спорт / семья / дети.",
+       "how": "Воскресная сессия 20–30 минут, ежедневно 5 минут утром, чтобы адаптировать день, не переписывая неделю.",
+       "src": "S. Covey (1989); Covey, Merrill & Merrill (1994)"
+      },
+      {
+       "name": "GTD (Дэвид Аллен)",
+       "ev": "C",
+       "desc": "Пять шагов: сбор, прояснение, организация, обзор, действие. Всё выгружается из головы во внешнюю систему, у каждого дела есть следующее физическое действие, правило двух минут, списки по контекстам, календарь только для жёстких дел.",
+       "how": "Еженедельный обзор на 60–90 минут — сердце системы; без него она разваливается за 2–3 недели.",
+       "src": "D. Allen, 2001/2015; Heylighen & Vidal (2008), Long Range Planning 41(6)"
+      },
+      {
+       "name": "Тайм-драйв (Архангельский)",
+       "ev": "C",
+       "desc": "Жёсткие задачи привязаны ко времени и идут в календарь, гибкие живут в контекстных списках, бюджетируемые получают блок на период. «Слона» режут на «бифштексы», отдых и спорт планируют как работу.",
+       "how": "В календаре только жёсткое; в окнах открывайте список нужного контекста.",
+       "src": "Г. Архангельский, «Тайм-драйв», около 2005"
+      },
+      {
+       "name": "Zen to Done",
+       "ev": "C",
+       "desc": "Упрощённый «GTD для людей» с акцентом на внедрение по одной привычке за раз; 10 привычек, минимальная версия включает первые четыре. В день выбираются 3 MIT.",
+       "how": "Утром 3 MIT, хотя бы одна продвигает «камень» недели; внедряйте по одной привычке в 30 дней.",
+       "src": "L. Babauta, zenhabits.net, 2007–2008"
+      },
+      {
+       "name": "Bullet Journal",
+       "ev": "C",
+       "desc": "Бумажная модульная система: быстрая запись с маркерами, индекс, будущий и месячный логи, ежедневный лог и миграция. Переписывание дела от руки служит фильтром «стоит ли это переписывать».",
+       "how": "Утром 3–7 задач, вечером ×, > или вычеркнуть и 2–3 строки рефлексии.",
+       "src": "R. Carroll, «The Bullet Journal Method», 2018"
+      },
+      {
+       "name": "Личный Kanban",
+       "ev": "C",
+       "desc": "Два правила: визуализируй работу и ограничь незавершённое (WIP). Колонки «Сегодня / В работе / Ожидаю / Готово», дорожки по сферам жизни. Лимит WIP объясняет закон Литтла и издержки переключения.",
+       "how": "WIP = 2–3 карточки; для детей постарше сделайте семейную доску на холодильнике.",
+       "src": "J. Benson & T. DeMaria Barry, «Personal Kanban», 2011"
+      }
+     ]
+    },
+    {
+     "name": "Время и ритм",
+     "children": [
+      {
+       "name": "Тайм-блокинг",
+       "ev": "C",
+       "desc": "Не список, а расписание: каждый отрезок дня заранее закреплён за типом работы. Прямых исследований «тайм-блокинга» как бренда нет, зато механизм совпадает с if–then планами (d ≈ 0,65), а пакетирование снижает издержки переключения.",
+       "how": "Сначала жёсткие блоки (сон, смены, школа, тренировка, ужин), затем глубокая работа в пик, буфер 20–40 %, в конце дня сравните план и факт.",
+       "src": "C. Newport, «Deep Work», 2016; Gollwitzer & Sheeran 2006"
+      },
+      {
+       "name": "ALPEN (Зайверт)",
+       "ev": "C",
+       "desc": "Алгоритм на пять минут: задачи, длительность, буферы, решения, контроль. Правило 60/40: планировать не больше 60 % времени. Единственная классическая методика, где буфер — обязательный шаг.",
+       "how": "Если сумма задач больше 60 % доступного времени, режьте; вечером сверяйте план и факт.",
+       "src": "L. Seiwert, 1980–1990-е; Buehler et al. 1994"
+      },
+      {
+       "name": "Закон Паркинсона",
+       "ev": "B",
+       "desc": "Работа заполняет всё отведённое на неё время. Эксперименты показывают подстройку темпа под отведённый срок, а самоназначенные промежуточные дедлайны помогают, хотя слабее внешних.",
+       "how": "Каждой задаче давайте «сколько»: «отчёт 90 минут»; сжимайте отдельные задачи, но оставляйте буфер на уровне дня.",
+       "src": "Bryan & Locke (1967); Ariely & Wertenbroch (2002), Psychological Science 13(3)"
+      },
+      {
+       "name": "Pomodoro",
+       "ev": "B",
+       "desc": "25 минут фокуса, 5 минут перерыва, после четырёх «помидоров» длинный перерыв. В эксперименте на 87 студентах систематические перерывы дали меньше утомления и отвлечений и больше концентрации, чем перерывы «по самочувствию». Подтверждена идея запланированных перерывов, а не магия числа 25.",
+       "how": "Планируйте 8–12 помидоров чистой работы; для потоковой работы удлиняйте до 50–90 минут; родителям — 1–2 помидора в сон ребёнка.",
+       "src": "F. Cirillo (2006/2018); Biwer et al. (2023), Br J Educ Psychol 93(2): 353–367"
+      },
+      {
+       "name": "Правило 52/17",
+       "ev": "C",
+       "desc": "52 минуты работы и 17 минут полного перерыва. Цифры получены из наблюдательных данных трекера DeskTime, причинность не установлена; в 2021 году тот же анализ дал 112/26.",
+       "how": "Подстраивайте (50/10, 60/15, 90/20) и делайте перерыв настоящим: прогулка, растяжка, игра с ребёнком, не соцсети.",
+       "src": "DeskTime, 2014; обновление 2021"
+      }
+     ]
+    },
+    {
+     "name": "Цели",
+     "children": [
+      {
+       "name": "SMART-цели",
+       "ev": "A/C",
+       "desc": "Конкретная, измеримая, достижимая, значимая, ограниченная во времени цель. Основа (конкретные и трудные цели) сильная, сам акроним отдельно не проверяли, а «реалистичность» частично спорит с пользой трудных целей.",
+       "how": "Превращайте цель в ежедневное действие: «вт/чт/сб в 7:00 тренировка 30 минут». Для смысловых целей добавляйте качественные критерии.",
+       "src": "G. Doran (1981), Management Review 70(11); Locke & Latham 2002"
+      },
+      {
+       "name": "Личные OKR",
+       "ev": "A/C",
+       "desc": "Вдохновляющая цель и 2–4 измеримых ключевых результата на квартал; 70 % выполнения считается хорошо. Для личных OKR исследований нет, сильна лежащая под ними теория целей. Не подходят при выгорании и в нестабильный период.",
+       "how": "2–4 цели на квартал, оценка прогресса раз в неделю на обзоре, 1–2 задачи дня привязаны к KR.",
+       "src": "A. Grove, 1983; J. Doerr, «Measure What Matters», 2018"
+      }
+     ]
+    },
+    {
+     "name": "Учёт",
+     "children": [
+      {
+       "name": "Хронометраж Любищева",
+       "ev": "C",
+       "desc": "Биолог Александр Любищев 56 лет (1916–1972) ежедневно записывал, на что уходит время, делил его на «Работу 1» и «Работу 2» и планировал год по фактическим данным. Мониторинг прогресса как техника хорошо подтверждён (метаанализ Harkin et al., 2016), сам метод не исследовали.",
+       "how": "1–2 недели записывайте всё время по категориям, найдите «поглотители» и реальные длительности задач; повторяйте раз в полгода.",
+       "src": "Д. Гранин, «Эта странная жизнь», 1974; Harkin et al. (2016), Psychological Bulletin 142(2)"
+      }
+     ]
+    }
+   ],
+   "sub": "21 методика: от Айви Ли до OKR и хронометража"
+  },
+  {
+   "name": "Современные подходы",
+   "children": [
+    {
+     "name": "Хронобиология",
+     "children": [
+      {
+       "name": "Хронотип: MEQ и MCTQ",
+       "ev": "A",
+       "desc": "Хронотип — непрерывное смещение внутренних часов от жаворонков к совам, а не четыре ящика. MEQ спрашивает о предпочтениях, MCTQ о фактическом сне в рабочие и свободные дни. Максимальная «позднесть» приходится примерно на 20 лет, потом хронотип смещается к раннему.",
+       "how": "За 2 недели понаблюдайте за сном в отпуске без будильника: середина сна до ~3:00 говорит о раннем хронотипе, после ~5:00 о позднем.",
+       "src": "Horne & Östberg (1976); Roenneberg et al. (2003, 2004)"
+      },
+      {
+       "name": "Социальный джетлаг",
+       "ev": "A",
+       "desc": "Разница между серединой сна в рабочие и свободные дни. Связан с ожирением, курением и худшим самочувствием, но данные наблюдательные, причинность не доказана.",
+       "how": "Держите разницу во времени подъёма будни/выходные не больше часа, сдвигая выходные ближе к будням.",
+       "src": "Wittmann, Dinich, Merrow & Roenneberg (2006), Chronobiology International 23(1–2): 497–509"
+      },
+      {
+       "name": "«Животные» хронотипы Бреуса",
+       "ev": "C",
+       "desc": "Лев, медведь, волк, дельфин. Первые три — переименованные ранний, средний и поздний типы, а «дельфин» не хронотип, а смесь проблем со сном и тревожности. Независимой рецензируемой валидации четырёх типов не найдено.",
+       "how": "Используйте как понятный язык в семье, тип определяйте по MEQ или MCTQ; «дельфинам» — к сомнологу, расписания из книги считайте гипотезами.",
+       "src": "M. Breus, «The Power of When», 2016"
+      },
+      {
+       "name": "Синхрония: аналитика в пик",
+       "ev": "B",
+       "desc": "Сложные задачи на внимание и рабочую память часто лучше в оптимальное для хронотипа время. В обзоре 65 исследований более чем в 80 % не нашлось основного эффекта хронотипа, а синхрония нашлась примерно в 45 % исследований взрослых 18–45 лет и в 10 из 12 у пожилых.",
+       "how": "Аналитику, код и расчёты — в пик, нельзя обещать «+30 % продуктивности»: такие цифры без проверенного источника.",
+       "src": "Chronotype and synchrony effects in human cognitive performance (2025), Chronobiology International"
+      },
+      {
+       "name": "Креатив вне пика",
+       "ev": "B",
+       "desc": "Задачи на инсайт решались лучше в неоптимальное время суток: ослабленное торможение помогает отвлечённым ассоциациям. Одно исследование, но на нём построена модель Пинка.",
+       "how": "Мозговые штурмы, свободное письмо и прогулки с размышлением ставьте в непиковые часы.",
+       "src": "Wieth & Zacks (2011), Thinking & Reasoning 17(4): 387–401"
+      },
+      {
+       "name": "Настроение по времени суток",
+       "ev": "B",
+       "desc": "Анализ около 500 млн твитов 2,4 млн людей из 84 стран: позитивный аффект пикует рано утром и снижается к середине дня, по выходным утренний пик примерно на 2 часа позже. Ограничения: пользователи Twitter не репрезентативны, настроение оценено по словарю.",
+       "how": "Берите как фон к модели «пик — спад — восстановление», а не как правило.",
+       "src": "Golder & Macy (2011), Science 333: 1878"
+      },
+      {
+       "name": "Послеобеденный спад",
+       "ev": "A/B",
+       "desc": "Примерно в 13:00–16:00 падают бдительность и производительность, даже без обеда и без знания времени; тяжёлый углеводный обед спад усиливает. Феномен устойчив, размер эффекта спорен.",
+       "how": "Окно 13–16 отдайте рутине, встречам, лёгкой тренировке или прогулке; обед умеренный, с белком и клетчаткой.",
+       "src": "Monk (2005), Clinics in Sports Medicine 24(2)"
+      },
+      {
+       "name": "Pink «When»: пик, спад, восстановление",
+       "ev": "C",
+       "desc": "Аналитика в пик, рутина в спад, инсайтные и творческие задачи в восстановление; у сов порядок обратный. Плюс перерывы-восстановители: короткие, с движением, на улице, без экрана. Распределение 14/21/65 % у автора не проверено.",
+       "how": "Разделите рабочий день на три зоны и добавьте 2–3 перерыва по 5–15 минут, один на свежем воздухе.",
+       "src": "D. Pink, «When», 2018"
+      },
+      {
+       "name": "Подростки и старт школы в 8:30",
+       "ev": "A",
+       "desc": "С пубертата циркадные часы смещаются примерно на 2 часа позже, давление сна нарастает медленнее. AAP рекомендует начинать занятия в средних и старших классах не раньше 8:30. Задержка фазы сна — клиническое расстройство, его отличают от «просто совы».",
+       "how": "Сложное для подростка (репетитор, трудные домашние задания) ставьте на вторую половину дня; подъём в выходные не более чем на час позже.",
+       "src": "AAP (2014), Pediatrics 134(3): 642–649"
+      },
+      {
+       "name": "Дети и вечерний свет",
+       "ev": "B",
+       "desc": "Подавление мелатонина у детей примерно вдвое сильнее, чем у взрослых при том же освещении. Для экранов как причины проблем со сном доказательства слабее, чем для света вообще.",
+       "how": "За 1–2 часа до сна приглушите тёплый свет в доме, экраны уберите из спальни.",
+       "src": "Higuchi et al. (2014), J Clin Endocrinol Metab 99(9); Hartstein et al. (2022)"
+      },
+      {
+       "name": "Время тренировки",
+       "ev": "B",
+       "desc": "Острая сила и мощность в среднем выше во второй половине дня, но долгосрочные адаптации не имеют универсального лучшего времени: мышцы привыкают к привычному часу. Интенсивные вечерние тренировки лучше заканчивать за 1–2 часа до сна.",
+       "how": "Выбирайте время, когда реально сможете заниматься регулярно; перед соревнованиями последние недели тренируйтесь в час старта.",
+       "src": "Обзоры 2017–2026 (в файле 02)"
+      }
+     ]
+    },
+    {
+     "name": "Внимание",
+     "children": [
+      {
+       "name": "Deep Work",
+       "ev": "C",
+       "desc": "Глубокая работа — концентрация без отвлечений, поверхностная — логистика. Четыре философии: монашеская, бимодальная, ритмическая, журналистская. Ритмический вариант лучше всего подходит людям с семьёй.",
+       "how": "Начинайте день с блока 2–4 часа в пике: телефон в другой комнате, почта закрыта; при срыве переписывайте остаток дня.",
+       "src": "C. Newport, «Deep Work», 2016"
+      },
+      {
+       "name": "Slow Productivity",
+       "ev": "C",
+       "desc": "Три принципа: делай меньше дел, работай в естественном темпе, одержимость качеством. Многоуровневое планирование: квартал, неделя, день; без верхних уровней день превращается в тушение пожаров.",
+       "how": "Ограничьте активные проекты (например, до 3 рабочих и 1 личного) и составляйте план дня из недельного.",
+       "src": "C. Newport, «Slow Productivity», 2024"
+      },
+      {
+       "name": "Maker и Manager",
+       "ev": "C",
+       "desc": "У менеджера день нарезан на часовые слоты, у «делателя» минимальная единица полдня, и одна встреча разрушает весь блок. Эссе, но согласуется с данными о прерываниях.",
+       "how": "Собирайте встречи пакетом (например, после 14:00), заведите дни или утра без встреч; «детское» время тоже maker-подобное.",
+       "src": "P. Graham, «Maker's Schedule, Manager's Schedule», 2009"
+      },
+      {
+       "name": "Attention residue",
+       "ev": "B",
+       "desc": "При переключении часть внимания «залипает» на прерванной задаче, особенно незавершённой, и это снижает качество следующей работы. Лабораторные эксперименты, независимых репликаций немного.",
+       "how": "Не открывайте почту «на минутку» перед глубоким блоком.",
+       "src": "Leroy (2009), OBHDP 109: 168–181"
+      },
+      {
+       "name": "Заметка возобновления",
+       "ev": "B",
+       "desc": "Короткий «план возобновления» на 1–2 минуты (где остановился, что делать дальше) снижает остаток внимания и улучшает работу над прервавшей задачей.",
+       "how": "Перед встречей, обедом или поездкой за ребёнком запишите: где я, следующий шаг.",
+       "src": "Leroy & Glomb (2018), Organization Science"
+      },
+      {
+       "name": "Издержки переключения",
+       "ev": "A",
+       "desc": "Переключение стоит времени, и стоит тем больше, чем сложнее правила. Популярное «до 40 % продуктивного времени» — оценка Д. Мейера, а не результат этого эксперимента.",
+       "how": "Почта и мессенджеры 2–4 раза в день, одна задача на блок, уведомления выключены; родителям — «окна доступности» для детей.",
+       "src": "Rubinstein, Meyer & Evans (2001), JEP: HPP 27(4): 763–797"
+      }
+     ]
+    },
+    {
+     "name": "Поведенческая наука",
+     "children": [
+      {
+       "name": "If–then планы (Gollwitzer)",
+       "ev": "A",
+       "desc": "«Если [ситуация], то я сделаю [действие]». Метаанализ 94 тестов, d = 0,65. Работают для спорта, учёбы и прокрастинации; детям формат понятен уже в младшем школьном возрасте.",
+       "how": "К каждому ключевому пункту добавьте время, место и план на препятствие: «если ребёнок заболел, глубокий блок переношу на 20:30».",
+       "src": "Gollwitzer & Sheeran (2006), Adv Exp Soc Psychol 38: 69–119"
+      },
+      {
+       "name": "WOOP / ментальное контрастирование",
+       "ev": "A/B",
+       "desc": "Wish, Outcome, Obstacle, Plan: сначала желаемое будущее, затем внутреннее препятствие и if–then план. Метаанализ 21 исследования дал g = 0,336; эффект скромнее, чем у чистых if–then планов, возможна публикационная предвзятость.",
+       "how": "Утренний WOOP на 3–5 минут для главной задачи дня; с детьми можно делать как игру.",
+       "src": "Wang, Wang & Gai (2021), Frontiers in Psychology 12:565202; G. Oettingen (2014)"
+      },
+      {
+       "name": "Привычки: Lally и Singh",
+       "ev": "A/B",
+       "desc": "Медиана до плато автоматизма — 66 дней, диапазон 18–254 (Lally 2010, 96 участников, 84 дня). Мета-анализ Singh et al. (2024): медианы 59–66 дней, индивидуальный разброс 4–335. Пропуск одного дня привычку не разрушает; важны повторение, постоянный контекст и удовольствие.",
+       "how": "Ждите 2–3 месяца, а не 21 день; не вводите больше 1–2 новых привычек одновременно.",
+       "src": "Lally et al. (2010), Eur J Soc Psychol 40; Singh et al. (2024), Healthcare"
+      },
+      {
+       "name": "Привычки: Клир и Фогг",
+       "ev": "C",
+       "desc": "Atomic Habits: четыре закона и привязка к существующей привычке (по сути if–then). Tiny Habits: B = MAP (мотивация, способность, подсказка), крошечное действие и немедленное «празднование». Модели логичны, RCT-проверка методов ограничена.",
+       "how": "«После кофе я делаю 2 отжимания»; правило «никогда не пропускай дважды».",
+       "src": "J. Clear (2018); B. J. Fogg (2019)"
+      },
+      {
+       "name": "Ошибка планирования",
+       "ev": "A",
+       "desc": "Недооценка времени на собственные задачи — один из самых воспроизводимых эффектов. Помогает «взгляд извне» (сколько заняло в прошлые три раза) и разбивка на подзадачи.",
+       "how": "×1,5 к оценке, ×2 для новых, творческих и «семейных» задач с детьми; буфер 20–30 % в день, в семье с малышами больше.",
+       "src": "Kahneman & Tversky (1979); Buehler et al. (1994)"
+      },
+      {
+       "name": "Таймбоксинг",
+       "ev": "C",
+       "desc": "Каждой задаче назначается блок в календаре. У Eyal календарь строится от ценностей: «Я», «Отношения», «Работа», время для себя и семьи вносится первым. Рейтинг HBR — ранжирование собственной компании автора, не независимое исследование.",
+       "how": "Начинайте неделю с блоков ценностей, затем глубокая работа; в конце блока спросите «уложился? почему нет?».",
+       "src": "N. Eyal, «Indistractable», 2019; M. Zao-Sanders, HBR, 2018"
+      },
+      {
+       "name": "Состояние потока (flow)",
+       "ev": "B",
+       "desc": "Условия потока: баланс вызова и навыков, ясные цели, обратная связь, отсутствие отвлечений. По данным experience sampling поток чаще бывает на работе, чем в пассивном досуге; активные хобби восстанавливают лучше скроллинга.",
+       "how": "Ставьте в план активный досуг (музыка, спорт, игры с детьми), а не «остаток времени»; на глубокий блок задайте чёткую микроцель.",
+       "src": "M. Csikszentmihalyi, «Flow», 1990"
+      }
+     ]
+    },
+    {
+     "name": "Мягкие системы",
+     "children": [
+      {
+       "name": "Беркман: «Четыре тысячи недель»",
+       "ev": "C",
+       "desc": "Средняя жизнь около 4000 недель, «успеть всё» невозможно, а погоня за эффективностью только увеличивает поток задач. Выбирать, чем осознанно пренебрегать, ограничивать незавершённое до трёх проектов.",
+       "how": "Заранее решите, что останется недоделанным, и ограничьте работу в процессе.",
+       "src": "O. Burkeman, «Four Thousand Weeks», 2021"
+      },
+      {
+       "name": "Метод 3-3-3",
+       "ev": "C",
+       "desc": "3 часа сфокусированной работы над главным проектом, 3 коротких срочных или давно откладываемых дела, 3 поддерживающих. Приписывается Беркману по вторичным источникам, оригинальный пост не проверен.",
+       "how": "Шаблон для перегруженных; в день с детьми масштабируйте до «1-3-3» или «90 минут-2-2».",
+       "src": "Рассылка The Imperfectionist (не проверена)"
+      },
+      {
+       "name": "Essentialism",
+       "ev": "C",
+       "desc": "«Меньше, но лучше»: систематически отсекать неважное. Правило «чёткое да или нет», буферы, защита сна, вежливое «нет».",
+       "how": "Перед планированием спросите: что одно сделает этот день успешным? Вычеркните или делегируйте 1–2 пункта, буфер 20–50 %.",
+       "src": "G. McKeown, «Essentialism», 2014"
+      },
+      {
+       "name": "Make Time: Highlight",
+       "ev": "C",
+       "desc": "Каждый день одна главная задача (60–90 минут), затем Laser (защита от отвлечений), Energize (движение, еда, сон, общение, свет) и Reflect. Highlight может быть семейным.",
+       "how": "Запишите один Highlight накануне и поставьте в лучшее окно календаря.",
+       "src": "J. Knapp & J. Zeratsky, «Make Time», 2018"
+      },
+      {
+       "name": "Feel-Good Productivity",
+       "ev": "C",
+       "desc": "Продуктивность растёт из хорошего самочувствия. Три «энерджайзера»: игра, сила, люди. Опирается на исследования позитивных эмоций уровня B, но связь с продуктивностью во многом экстраполирована.",
+       "how": "Добавляйте в день одного «энерджайзера»; неприятную задачу оформите игрой (таймер, челлендж, работа вместе).",
+       "src": "A. Abdaal, «Feel-Good Productivity», 2023"
+      },
+      {
+       "name": "Shutdown ritual",
+       "ev": "B/C",
+       "desc": "Ритуал закрытия рабочего дня: проверить срочное, перенести незавершённое, посмотреть недельный план, сказать «Schedule shutdown, complete». Механизм (выгрузка мыслей, психологическое отключение) уровня B, сам ритуал C. Пятиминутный список дел на завтра перед сном ускорял засыпание у студентов.",
+       "how": "15–20 минут в конце рабочего дня как блок в календаре; для родителей это граница «работа — семья».",
+       "src": "Newport (2016); Masicampo & Baumeister 2011; Scullin et al. (2018), JEP: General 147(1)"
+      },
+      {
+       "name": "Weekly review",
+       "ev": "C",
+       "desc": "Еженедельно 30–60 минут: очистить входящие, обновить проекты, просмотреть календарь, выбрать приоритеты, расставить глубокие блоки, тренировки и семейные события.",
+       "how": "Воскресенье 18:00 или пятница 16:00; семейный вариант — 15-минутная планёрка с детьми от ~7 лет.",
+       "src": "D. Allen, 2001; C. Newport; T. Forte"
+      },
+      {
+       "name": "PARA и Second Brain",
+       "ev": "C",
+       "desc": "Projects, Areas, Resources, Archive — способ организовать информацию. Для плана дня не расписание, а инфраструктура: «Areas» хорошо совпадают со сферами баланса. Концепция созвучна исследованиям когнитивной разгрузки.",
+       "how": "Заведите по «Area» на работу, спорт, семью, детей и хобби с понятным стандартом.",
+       "src": "T. Forte, «Building a Second Brain», 2022"
+      }
+     ]
+    },
+    {
+     "name": "Сон и восстановление",
+     "children": [
+      {
+       "name": "Нормы сна: AASM и NSF",
+       "ev": "A",
+       "desc": "Взрослым 18–60 лет не менее 7 часов (AASM + SRS), NSF называет 7–9 ч. Дети по AASM: 4–12 мес 12–16 ч, 1–2 года 11–14, 3–5 лет 10–13, 6–12 лет 9–12, 13–18 лет 8–10 (с дневным сном).",
+       "how": "Стройте день от сна назад: сначала время подъёма, затем отбой; сон не «резерв» для работы или сериалов.",
+       "src": "Watson et al. (2015); Hirshkowitz et al. (2015); Paruthi et al. (2016)"
+      },
+      {
+       "name": "Протоколы Хубермана",
+       "children": [
+        {
+         "name": "Утренний свет",
+         "ev": "B",
+         "desc": "10–30 минут на улице в первый час после пробуждения. Фазовый ответ на свет — твёрдая физиология, но конкретная дозировка («10 минут в ясный день, 30 в облачный») — эвристика, а обзоры по настроению и сну противоречивы.",
+         "how": "Утренняя прогулка или путь на работу и в школу пешком — дёшево и безопасно, в том числе для детей.",
+         "src": "Burns et al. (2023), Nature Mental Health (по памяти)"
+        },
+        {
+         "name": "Избегать яркого света вечером",
+         "ev": "A/B",
+         "desc": "Вечерний свет задерживает ритм и подавляет мелатонин; дети особенно чувствительны.",
+         "how": "Вечером приглушённый тёплый свет.",
+         "src": "02_modern_science.md, раздел 6.2"
+        },
+        {
+         "name": "NSDR / йога-нидра",
+         "ev": "B/C",
+         "desc": "10–30 минут ведомого расслабления. Небольшие RCT, данные последовательнее по стрессу и тревоге, чем по сну; сам бренд NSDR своей клинической базы не имеет.",
+         "how": "10–20 минут как альтернатива дневному сну в послеобеденный спад.",
+         "src": "Систематический обзор 2025 (SAGE)"
+        },
+        {
+         "name": "Кофеин через 90–120 минут",
+         "ev": "C",
+         "desc": "Рекомендация отложить кофеин после пробуждения без проверенного источника, убедительных исследований найти не удалось.",
+         "how": "Не принимайте как обязательное правило.",
+         "src": "Без проверенного источника"
+        },
+        {
+         "name": "Не пить кофеин за 6+ часов до сна",
+         "ev": "B",
+         "desc": "Рекомендация обоснована лучше, чем отсрочка утреннего кофе (Drake et al., 2013, по памяти).",
+         "how": "Последний кофе — не позже, чем за 6 часов до отбоя.",
+         "src": "Drake et al. (2013), J Clin Sleep Med (по памяти)"
+        },
+        {
+         "name": "Холодный душ, прорубь, сауна",
+         "ev": "C",
+         "desc": "Небольшие исследования; клинически значимые эффекты на продуктивность не доказаны.",
+         "how": "Можно как приятный ритуал, но не как основу плана.",
+         "src": "02_modern_science.md, раздел 6.2"
+        }
+       ]
+      },
+      {
+       "name": "Дневной сон 10–26 минут",
+       "ev": "B",
+       "desc": "Лётчики с возможностью поспать 40 минут засыпали за ~5,6 минуты, спали в среднем ~26 минут и были бодрее. Десятиминутный сон даёт быстрое улучшение без инерции сна, больше 30 минут — риск разбитости.",
+       "how": "10–20 минут в 13:00–15:00, будильник на 25–30 минут от момента, когда лёг; не позже 15–16 часов и не при инсомнии.",
+       "src": "Rosekind et al. (1994–1995), NASA; Brooks & Lack (2006, по памяти)"
+      },
+      {
+       "name": "Энергия: Loehr и Schwartz",
+       "ev": "C",
+       "desc": "Производительность определяется энергией: физической, эмоциональной, ментальной, духовной. Ключевая идея — осцилляция: интенсивное усилие чередуется с полноценным восстановлением.",
+       "how": "Поставьте в день «точки восстановления» каждые 60–120 минут и раз в неделю проверяйте, какое из четырёх измерений просело.",
+       "src": "J. Loehr & T. Schwartz, «The Power of Full Engagement», 2003"
+      },
+      {
+       "name": "90-минутные блоки (BRAC)",
+       "ev": "B/C",
+       "desc": "Днём доказательства ритма BRAC противоречивы, жёсткого 90-минутного периода не подтверждено. Блоки 60–90 минут — разумная практическая эвристика по пределу концентрации, а не закон физиологии.",
+       "how": "Глубокая работа блоками 60–90 минут с перерывом 10–20 минут, суммарно 2–4 часа в день.",
+       "src": "N. Kleitman; Ericsson et al. (1993); Macnamara & Maitra (2019)"
+      }
+     ]
+    },
+    {
+     "name": "AI-планировщики",
+     "children": [
+      {
+       "name": "Motion",
+       "ev": "C",
+       "desc": "Автоматически раскладывает задачи по календарю с учётом дедлайнов и пересчитывает план. Дорогой, без бесплатного плана; ошибка планирования автоматизируется, если оценки неверны. В 2025 привлёк около 60 млн долларов.",
+       "how": "Закладывайте реальные длительности и буферы, иначе автоматика тиражирует ошибку.",
+       "src": "Обзоры Sacra, Morgen; usemotion.com"
+      },
+      {
+       "name": "Reclaim.ai",
+       "ev": "C",
+       "desc": "Защищает «привычки» (спорт, обед, глубокую работу) и focus time, гибко двигая их вокруг встреч; есть бесплатный тариф. В августе 2024 куплен Dropbox.",
+       "how": "Помечайте блоки «семья», «сон», «спорт» как неперемещаемые.",
+       "src": "Сообщения о покупке Dropbox (август 2024)"
+      },
+      {
+       "name": "Clockwise",
+       "ev": "C",
+       "desc": "Оптимизировал встречи в команде и создавал непрерывные focus-блоки. Закрыт 27 марта 2026 после acqui-hire в Salesforce, данные пользователей удалены (по сообщениям, официальное объявление не прочитано).",
+       "how": "Урок: не делайте единственный стартап сердцем системы, экспортируйте данные.",
+       "src": "cal.com, usecarly.com (вторичные)"
+      },
+      {
+       "name": "Akiflow",
+       "ev": "C",
+       "desc": "Собирает задачи из почты, Slack, Notion и Asana в единый inbox и позволяет перетаскивать их в календарь. Платный, есть кривая обучения; детали AI-функций не проверены.",
+       "how": "Подходит, если задачи разбросаны по многим источникам.",
+       "src": "Без проверенного источника по деталям 2026"
+      },
+      {
+       "name": "Sunsama",
+       "ev": "C",
+       "desc": "Ритуал ежедневного планирования на 10–15 минут и ритуал daily shutdown, предупреждения о перегрузке дня, недельные обзоры. Ближе всего к научным принципам; стоит около 20–25 долларов в месяц, AI минимален.",
+       "how": "Подходит тем, кому нужна «осознанная» рамка планирования, а не автоматика.",
+       "src": "sunsama.com/features (страницы продукта)"
+      },
+      {
+       "name": "Todoist (AI-функции)",
+       "ev": "C",
+       "desc": "Таск-менеджер; AI помогает разбить задачу на шаги, голосовой ввод, бесплатный тариф. Без календарного таймбоксинга нужен внешний календарь; детали AI-функций 2025–2026 не проверены.",
+       "how": "Разбивка на подзадачи помогает против ошибки планирования и прокрастинации.",
+       "src": "Без проверенного источника"
+      },
+      {
+       "name": "LLM-ассистенты",
+       "ev": "C",
+       "desc": "ChatGPT, Claude, Gemini составляют план дня по описанию, разбивают задачи, помогают с WOOP и if–then планами. Не знают реальной длительности ваших задач, склонны перегружать план, есть вопрос приватности календаря.",
+       "how": "Давайте хронотип, сон, детей и жёсткие блоки, просите буфер и сверяйте с ×1,5.",
+       "src": "Общая оценка AI-планировщиков: независимых RCT нет"
+      }
+     ]
+    },
+    {
+     "name": "СДВГ",
+     "children": [
+      {
+       "name": "КПТ для взрослых с СДВГ",
+       "ev": "A/B",
+       "desc": "Наиболее доказательная основа: обучение планированию, расписанию, разбивке задач и работе с прокрастинацией. Оценка относится к пакету навыков в рамках терапии, а не к отдельным лайфхакам. План дня не заменяет диагностику и лечение.",
+       "how": "При выраженных трудностях — к специалисту; ниже приёмы-помощники.",
+       "src": "Safren et al. (2010), JAMA; Solanto et al. (2010) (по памяти)"
+      },
+      {
+       "name": "Визуальные таймеры",
+       "ev": "B/C",
+       "desc": "Time Timer, аналоговые часы и напоминания компенсируют «слепоту ко времени» (экстернализация, Barkley). Прямых RCT на сами таймеры мало.",
+       "how": "Таймер на каждый блок, напоминание за 10 минут до перехода; детям — на уроки и сборы.",
+       "src": "R. Barkley (клинические рекомендации)"
+      },
+      {
+       "name": "Body doubling",
+       "ev": "C",
+       "desc": "Работа в присутствии другого человека, очно или онлайн. Контролируемых испытаний у взрослых с СДВГ практически нет, есть опрос 220 человек и небольшие препринты; механизм социальной фасилитации изучен в целом (B).",
+       "how": "1–2 сессии в день по 25–50 минут на неприятные задачи; дети делают уроки рядом с родителем.",
+       "src": "Eagle & Ringland (2024), ACM TACCESS"
+      },
+      {
+       "name": "ICNU: интерес, вызов, новизна, срочность",
+       "ev": "C",
+       "desc": "Модель Додсона: внимание при СДВГ включается интересом, вызовом, новизной и срочностью, а не важностью. Клиническая модель, эмпирически не проверялась.",
+       "how": "Добавляйте в скучные задачи игру, соревнование, искусственный дедлайн или новое место (кафе).",
+       "src": "W. Dodson (ADDitude, Psychiatric Times)"
+      },
+      {
+       "name": "Первый шаг на 2 минуты",
+       "ev": "B",
+       "desc": "Мелкая нарезка и физический первый шаг снижают барьер запуска; приём входит в КПТ-пакеты.",
+       "how": "Начинайте с физического действия: открыть файл, написать заголовок.",
+       "src": "02_modern_science.md, раздел 8"
+      },
+      {
+       "name": "Гибкий план с «меню»",
+       "ev": "C",
+       "desc": "Жёсткий план при срыве вызывает стыд и отказ. Три приоритета плюс «меню» альтернатив под высокую и низкую энергию; якорные точки (подъём, еда, сон) жёсткие, остальное гибкое.",
+       "how": "Сделайте меню задач на два уровня энергии вместо расписания по минутам.",
+       "src": "02_modern_science.md, раздел 8"
+      },
+      {
+       "name": "Внешняя среда и структуры",
+       "ev": "B/C",
+       "desc": "Меньше трения и решений: ключи и вещи в одном месте, подготовка с вечера, «стартовые наборы».",
+       "how": "Собирайте всё нужное на завтра с вечера.",
+       "src": "02_modern_science.md, раздел 8"
+      },
+      {
+       "name": "Сон и движение при СДВГ",
+       "ev": "B",
+       "desc": "При СДВГ часто поздний хронотип и проблемы со сном; физическая нагрузка кратковременно улучшает исполнительные функции.",
+       "how": "Стабильный подъём, утренний свет, короткая активность перед учёбой и работой.",
+       "src": "02_modern_science.md, раздел 8"
+      }
+     ]
+    }
+   ],
+   "sub": "Сон, внимание, привычки, ИИ-планировщики, СДВГ"
+  },
+  {
+   "name": "Персонализация: кто я",
+   "children": [
+    {
+     "name": "Тип человека",
+     "children": [
+      {
+       "name": "Big Five",
+       "children": [
+        {
+         "name": "Связь с прокрастинацией (Steel)",
+         "ev": "A",
+         "desc": "Мета-анализ 691 корреляции: сильные предикторы прокрастинации — неприятность задачи, отдалённость дедлайна, низкая самоэффективность, импульсивность и низкая добросовестность. Нейротизм связан слабо. Точные величины корреляций нужно сверить по оригиналу.",
+         "how": "Снижайте неприятность задачи: режьте на маленькие первые шаги, приближайте дедлайны.",
+         "src": "Steel (2007), Psychological Bulletin 133(1): 65–94"
+        },
+        {
+         "name": "Добросовестность",
+         "ev": "B/C",
+         "desc": "Высокая: подробные планы работают сами, риск перфекционизма и перегрузки, поэтому нужны буфер 20–30 % и обязательный отдых. Низкая: минимум структуры и максимум внешних опор — 1–3 главные задачи (MIT), if–then, таймер, подотчётность, короткий горизонт.",
+         "how": "Высокая — планируйте «время ничегонеделания»; низкая — план на день и неделю вместо годовых.",
+         "src": "Steel 2007; Aeon et al. 2021; рекомендации — логический вывод, не RCT"
+        },
+        {
+         "name": "Нейротизм",
+         "ev": "B/C",
+         "desc": "Высокий: тревога превращает большой список в источник стресса — короткий список, вечерняя «выгрузка мыслей», окно для беспокойства, большие задачи на маленькие шаги. Низкий: плотные планы переносятся хорошо, но легко недооценить усталость.",
+         "how": "Высокий — план на завтра вечером; низкий — еженедельный чек-ин «колесо баланса».",
+         "src": "03_personalization_balance.md, раздел 1.1"
+        },
+        {
+         "name": "Экстраверсия",
+         "ev": "B/C",
+         "desc": "Высокая: встраивайте людей (парные сессии, коворкинг, групповые тренировки) и помните об отложенной усталости. Низкая: защищайте блоки тишины после встреч, кластеризуйте встречи в 1–2 дня.",
+         "how": "Не ставьте сложную аналитику сразу после насыщенного социального дня.",
+         "src": "Leikas & Ilmarinen (2017), Journal of Personality"
+        },
+        {
+         "name": "Открытость",
+         "ev": "B/C",
+         "desc": "Высокая: нужна новизна — чередуйте места, порядок задач, ставьте «эксперименты недели»; хороши тематические дни. Низкая: предпочитают стабильный распорядок, чек-листы и повторяющиеся шаблоны.",
+         "how": "Высокая — тематические дни с гибким наполнением.",
+         "src": "03_personalization_balance.md, раздел 1.1"
+        },
+        {
+         "name": "Доброжелательность",
+         "ev": "B/C",
+         "desc": "Высокая: риск говорить «да» всем, чужие задачи вытесняют свои — нужны защищённые блоки «встреча с собой» и правило «отвечу завтра». Низкая: меньше проблем с отказами, полезны явные договорённости в семье.",
+         "how": "Заранее защитите блок «встреча с собой».",
+         "src": "03_personalization_balance.md, раздел 1.1"
+        }
+       ]
+      },
+      {
+       "name": "MBTI и соционика",
+       "ev": "C",
+       "desc": "Отдельные шкалы MBTI достаточно стабильны, а четырёхбуквенный тип нет (часто цитируют, что до 50 % людей получают другой тип через ~5 недель, но цифра старая). У соционики рецензируемой доказательной базы почти нет. Шкала J/P перекрывается с добросовестностью.",
+       "how": "Используйте только язык J/P: J — детальный план и тайм-блокинг, P — меню задач и 2–3 якоря в день. Не клейте ярлыки в семье.",
+       "src": "Pittenger (1993, 2005); данные издателя (конфликт интересов)"
+      },
+      {
+       "name": "Four Tendencies",
+       "children": [
+        {
+         "name": "Upholder (Исполнитель)",
+         "ev": "C",
+         "desc": "Выполняет и внешние, и внутренние ожидания; по опросу самой Рубин около 19 %. Рецензируемой валидации нет.",
+         "how": "Чёткое расписание и чек-листы; планируйте «разрешённые отклонения», чтобы не стать ригидным.",
+         "src": "G. Rubin, «The Four Tendencies», 2017"
+        },
+        {
+         "name": "Questioner (Скептик)",
+         "ev": "C",
+         "desc": "Выполняет только то, что считает обоснованным; около 24 %. Риск — паралич анализа.",
+         "how": "Каждому блоку нужно «зачем»: данные, трекинг, эксперименты; ставьте дедлайн на исследование.",
+         "src": "G. Rubin, 2017"
+        },
+        {
+         "name": "Obliger (Обязательный)",
+         "ev": "C",
+         "desc": "Легко выполняет внешнее, с трудом внутреннее; самая большая группа, около 41 %. Опасность — выгорание от работы на всех.",
+         "how": "Внешняя подотчётность обязательна: тренер, партнёр по пробежке, оплаченный абонемент; «время для себя» оформите как обязательство перед кем-то.",
+         "src": "G. Rubin, 2017; принцип подотчётности: Harkin et al. 2016"
+        },
+        {
+         "name": "Rebel (Бунтарь)",
+         "ev": "C",
+         "desc": "Сопротивляется внешним и внутренним ожиданиям, действует из идентичности и свободы выбора; около 17 %.",
+         "how": "Вместо жёсткого плана дайте меню выбора, формулировки через идентичность и челленджи; не давите напоминаниями.",
+         "src": "G. Rubin, 2017"
+        }
+       ]
+      },
+      {
+       "name": "Хронотип как ограничение дня",
+       "ev": "A",
+       "desc": "Самую сложную работу ставят в пик бодрости (жаворонки — утро, совы — поздний день и вечер), рутину и встречи — в спад. Если профессия задаёт время жёстко (учитель, врач), подстраивайте то, что можно двигать: сон, спорт, подготовку.",
+       "how": "Пройдите MEQ или MCTQ и ставьте глубокий блок в свой пик.",
+       "src": "Horne & Östberg 1976; Roenneberg 2003; Wittmann 2006"
+      },
+      {
+       "name": "Интроверсия, экстраверсия и отложенная усталость",
+       "ev": "B",
+       "desc": "Экстравертное поведение у всех сразу повышает настроение, а через 2–3 часа сопровождается усталостью; различия между интровертами и экстравертами, вероятно, невелики.",
+       "how": "После 2–3 часов интенсивного общения планируйте окно восстановления 15–30 минут; интровертам-родителям нужно 20–30 минут без людей в день.",
+       "src": "Leikas & Ilmarinen (2017); Fleeson et al. (2002), JPSP 83(6)"
+      },
+      {
+       "name": "Моно- и полихронность",
+       "ev": "B/C",
+       "desc": "Предпочтение делать одно дело за раз или несколько параллельно — скорее ценность, чем способность; переключение стоит времени для всех. Есть валидированный опросник IPV.",
+       "how": "Монохронным — тайм-блокинг; полихронным — «тематические окна» плюс короткие спринты 45–60 минут для глубокой работы.",
+       "src": "E. Hall (1959, 1983); Bluedorn et al. (1999), J Managerial Psychology 14"
+      },
+      {
+       "name": "СДВГ и план дня",
+       "ev": "A/B",
+       "desc": "Распространённость персистирующего СДВГ у взрослых около 2,58 %, симптоматического около 6,76 %. Ядро трудностей — «слепота ко времени», исполнительные функции и старт. КПТ для взрослых доказательна, отдельные лайфхаки — слабо.",
+       "how": "Внешняя структура, короткие блоки 15–25 минут, ×1,5 к оценке и буферы на переходы; при выраженных трудностях — специалист.",
+       "src": "Song et al. (2021), Journal of Global Health 11; Safren et al. 2005/2010"
+      }
+     ]
+    },
+    {
+     "name": "Профессии и режимы",
+     "children": [
+      {
+       "name": "Maker и Manager",
+       "ev": "C",
+       "desc": "У «создателей» единица времени — полдня, у менеджеров — час. Мейкерам встречи кластерами и блоки 2–4 часа, менеджерам 1–2 «окна созидания» в неделю.",
+       "how": "Встречи мейкеру — после 14:00 или в 1–2 дня в неделю.",
+       "src": "P. Graham (2009); Mark, Gudith & Klocke (2008)"
+      },
+      {
+       "name": "Офис с 9 до 18",
+       "desc": "Ограничения: дорога, фиксированное время, open space, совещания. Шаблон: 20–40 минут движения до работы, глубокая работа 9–12, обед с прогулкой, встречи 13–16, рутина и план на завтра 16–18, ритуал завершения, вечер для семьи.",
+       "how": "Сделайте ритуал завершения мостом между работой и семьёй.",
+       "src": "03_personalization_balance.md, раздел 1.8.2"
+      },
+      {
+       "name": "Удалёнка и гибрид",
+       "desc": "Риски: размытые границы, изоляция, сидячий образ жизни. Нужны «фальшивая дорога» 15–20 минут, отдельное место, фиксированный конец дня и exercise snacks каждые 60–90 минут. При гибриде офисные дни под встречи, домашние под глубокую работу.",
+       "how": "Поставьте ритуал «дороги на работу» и время окончания в календарь.",
+       "src": "Ashforth et al. (2000), boundary theory"
+      },
+      {
+       "name": "Сменный график",
+       "children": [
+        {
+         "name": "Якорный сон",
+         "ev": "B/C",
+         "desc": "Если примерно 4 часа сна каждый день приходятся на одно и то же время независимо от смены, циркадный ритм стабильнее. Данные лабораторные; в практических обзорах это один из самых полезных советов.",
+         "how": "Например, ежедневно спать не менее чем с 8:00 до 12:00 после ночи, остальное добирать в «плавающем» окне.",
+         "src": "Minors & Waterhouse (1983), J Physiol 345: 451–467"
+        },
+        {
+         "name": "Профилактический сон",
+         "desc": "Сон на 1,5–2 часа перед ночной сменой и короткий сон 15–30 минут во время смены (с учётом инерции сна). AASM рекомендует запланированный сон, яркий свет в смене, мелатонин перед дневным сном (уровни рекомендаций сверить).",
+         "how": "Днём перед ночной сменой 14:00–16:00 как фиксированный блок.",
+         "src": "Morgenthaler et al. (2007), Sleep 30(11)"
+        },
+        {
+         "name": "Свет и темнота",
+         "desc": "Яркий свет в первой половине ночной смены, тёмные очки по дороге домой утром, блэкаут-шторы и беруши дома.",
+         "how": "Приготовьте «темнушку» для дневного сна.",
+         "src": "03_personalization_balance.md, раздел 1.8.3"
+        },
+        {
+         "name": "Ротация вперёд",
+         "desc": "Если есть выбор, ротация «утро → день → ночь» переносится легче обратной (классические данные Czeisler 1982, цифры сверить).",
+         "how": "Просите смены в прямой ротации.",
+         "src": "Czeisler et al. (1982), Science"
+        },
+        {
+         "name": "Семья и спорт при сменах",
+         "desc": "Общий календарь смен, семейные ритуалы переносятся на «завтрак-ужин» по сменному ритму, дневной сон смены — «табу» для шума. После ночи спорт лёгкий, интенсивный в дневные дни, не прямо перед сном.",
+         "how": "Планируйте неделю по календарю смен, а не по дням недели.",
+         "src": "03_personalization_balance.md, раздел 1.8.3"
+        }
+       ]
+      },
+      {
+       "name": "Предприниматель и фрилансер",
+       "desc": "Нет внешней структуры, работа «съедает всё». Нужны искусственные рамки: фиксированные начало и конец, недельное планирование, один день «CEO-время», лимит часов (например, не более 50 в неделю) и нерабочие дни.",
+       "how": "Для Obliger клиенты и коворкинг служат подотчётностью.",
+       "src": "03_personalization_balance.md, раздел 1.8.2"
+      },
+      {
+       "name": "Творческие профессии",
+       "desc": "Непредсказуемость вдохновения и авралы. Ежедневная практика в пик хронотипа (писатели часто 2–4 часа утром), остальное — администрирование, сезонные периоды интенсивности и восстановления.",
+       "how": "Хобби выбирайте другой модальности, иначе нет детачмента.",
+       "src": "03_personalization_balance.md, раздел 1.8.2"
+      },
+      {
+       "name": "Врачи",
+       "desc": "Жёсткий график, дежурства, эмоциональная нагрузка и высокий риск выгорания. Микровосстановление между пациентами (дыхание 1–2 минуты, вода, движение), защищённый сон после дежурства, короткие интенсивные тренировки.",
+       "how": "Ведите общий календарь дежурств с семьёй, используйте супервизию или балинтовские группы.",
+       "src": "03_personalization_balance.md, раздел 1.8.2"
+      },
+      {
+       "name": "Учителя",
+       "desc": "Звонок задаёт ритм, нагрузка эмоциональная и социальная, проверка работ съедает вечера. Спорт до школы или сразу после уроков, проверка в фиксированном блоке (например, 16–18), окно тишины после уроков, каникулы для хобби и восстановления.",
+       "how": "Не проверяйте тетради в постели.",
+       "src": "03_personalization_balance.md, раздел 1.8.2"
+      },
+      {
+       "name": "Руководители",
+       "desc": "День из коротких частых эпизодов и постоянная доступность. Утренний защищённый блок на стратегию 30–90 минут, встречи по 25/50 минут вместо 30/60, еженедельный обзор, явные правила доступности вечером и в выходные.",
+       "how": "Делегируйте и задайте команде пример правил доступности.",
+       "src": "Mintzberg (1973), «The Nature of Managerial Work»"
+      },
+      {
+       "name": "Студенты",
+       "desc": "Свободный, но хаотичный график, сессии, часто «совиный» хронотип. Якоря: подъём ±1 час, учебные блоки по 50–90 минут в пик, интервальное повторение, спорт 3–5 раз в неделю, избегать ночных «штурмов».",
+       "how": "Групповой спорт даёт ещё и социальность.",
+       "src": "03_personalization_balance.md, раздел 1.8.2"
+      },
+      {
+       "name": "Родители в декрете",
+       "desc": "День задаёт ребёнок. План не по часам, а по окнам сна и ритуалам: на одно окно один приоритет (сон самому, дело или себе). Ежедневная прогулка с коляской — спорт, свет и выход из дома; минимум один социальный контакт в день; ночные дежурства делят с партнёром.",
+       "how": "Добирайте сон днём; при признаках послеродовой депрессии обращайтесь за помощью рано.",
+       "src": "03_personalization_balance.md, раздел 1.8.2"
+      }
+     ]
+    },
+    {
+     "name": "Хобби и восстановление",
+     "children": [
+      {
+       "name": "Sonnentag и Fritz: четыре опыта восстановления",
+       "children": [
+        {
+         "name": "Психологическая отстранённость",
+         "ev": "A/B",
+         "desc": "Не думать о работе в нерабочее время. Валидированная модель, исследования в основном корреляционные.",
+         "how": "Ритуал завершения, рабочая почта не на телефоне вечером.",
+         "src": "Sonnentag & Fritz (2007), JOHP 12(3): 204–221"
+        },
+        {
+         "name": "Релаксация",
+         "ev": "A/B",
+         "desc": "Низкая активация и телесное расслабление: прогулка, чтение, баня.",
+         "how": "Вопрос недели: есть ли у меня каждый день спокойное время?",
+         "src": "Sonnentag & Fritz (2007)"
+        },
+        {
+         "name": "Мастерство",
+         "ev": "A/B",
+         "desc": "Новые навыки и вызовы вне работы: инструмент, спорт, рукоделие, язык. Хобби, похожее на работу (pet-проект у программиста), даёт мастерство, но может не давать отстранённости.",
+         "how": "Хорошее хобби даёт хотя бы 2 из 4 опытов; совмещайте с хобби другой модальности.",
+         "src": "Sonnentag & Fritz (2007)"
+        },
+        {
+         "name": "Контроль",
+         "ev": "A/B",
+         "desc": "Самому решать, что делать в свободное время.",
+         "how": "Оставьте «пустой» блок без обязательств.",
+         "src": "Sonnentag & Fritz (2007)"
+        }
+       ]
+      },
+      {
+       "name": "Serious leisure",
+       "ev": "B",
+       "desc": "Casual leisure — отдых и развлечения, serious leisure — систематические занятия любителей и энтузиастов, дающие «карьеру», идентичность и сообщество. В неделе нужны оба вида.",
+       "how": "1–2 serious-хобби на этап жизни и регулярный слот (например, вт и чт 19:30–21:00 плюс суббота утром).",
+       "src": "Stebbins (1982), Pacific Sociological Review 25(2); Stebbins (2007)"
+      },
+      {
+       "name": "Temptation bundling",
+       "ev": "B",
+       "desc": "Приятное только вместе с полезным: подкаст только на беговой дорожке. В РКИ вырос уровень посещения спортзала, но эффект ослабевает со временем.",
+       "how": "Подкаст или аудиокнига только во время тренировки или дороги.",
+       "src": "Milkman, Minson & Volpp (2014), Management Science 60(2)"
+      },
+      {
+       "name": "Хобби встроено в привычку",
+       "ev": "B",
+       "desc": "Связка с существующей привычкой («после того как уложил детей, 20 минут гитары»). Механизм — if–then планы.",
+       "how": "Привяжите хобби к стабильному якорю дня.",
+       "src": "Gollwitzer & Sheeran 2006"
+      },
+      {
+       "name": "Хобби с детьми",
+       "desc": "Общее хобби (походы, велосипед, настолки, готовка, лего, музыка) совмещает время с детьми и хобби. Но хотя бы одно хобби должно быть только своё: в общем взрослый часто организатор, а не участник.",
+       "how": "Одно общее хобби и одно личное.",
+       "src": "03_personalization_balance.md, раздел 1.9.3"
+      },
+      {
+       "name": "Хобби с партнёром",
+       "ev": "B",
+       "desc": "Новые и волнующие совместные занятия связаны с ростом удовлетворённости отношениями (self-expansion).",
+       "how": "Пробуйте вдвоём что-то новое, а не только привычный ужин.",
+       "src": "Aron et al. (2000), JPSP 78(2): 273–284"
+      },
+      {
+       "name": "Недельные хобби-окна",
+       "desc": "Два вечерних слота по 60–90 минут и один длинный слот в выходные (2–3 часа). Партнёры прикрывают друг друга: «я с детьми во вторник, ты в четверг».",
+       "how": "Договоритесь о расписании «прикрытия» в паре.",
+       "src": "03_personalization_balance.md, раздел 1.9.3"
+      },
+      {
+       "name": "Микро-хобби",
+       "desc": "Для очень загруженных (декрет, руководители) 10–15 минут в день (скетчинг, язык, чтение) лучше, чем ничего, и поддерживает идентичность.",
+       "how": "Выберите одно хобби на 10–15 минут и привяжите к якорю.",
+       "src": "03_personalization_balance.md, раздел 1.9.3"
+      }
+     ]
+    }
+   ],
+   "sub": "Тип человека, профессия, хобби"
+  },
+  {
+   "name": "Сферы баланса",
+   "children": [
+    {
+     "name": "Модели баланса",
+     "children": [
+      {
+       "name": "Колесо баланса",
+       "ev": "C",
+       "desc": "Круг из 6–10 сфер (работа, финансы, здоровье, семья, пара, друзья, рост, отдых, духовность, окружение), каждая оценивается от 1 до 10. Приписывается Полу Мейеру, первичный источник не найден. Коучинговый инструмент без валидации, но полезная структура для рефлексии.",
+       "how": "Раз в месяц оценивайте сферы и под 1–2 самые просевшие закладывайте конкретные блоки в неделю; «все по 10» не цель.",
+       "src": "P. J. Meyer / Success Motivation Institute (1960-е)"
+      },
+      {
+       "name": "Баланс и интеграция",
+       "ev": "B",
+       "desc": "Баланс подразумевает «равные части» и критикуется за игру с нулевой суммой. Интеграция и обогащение: навыки и позитивные эмоции переносятся между ролями.",
+       "how": "Смотрите, где роли помогают друг другу (спорт с друзьями, хобби с детьми).",
+       "src": "Greenhaus & Powell (2006), Academy of Management Review 31(1)"
+      },
+      {
+       "name": "Boundary theory",
+       "ev": "B",
+       "desc": "Люди располагаются на континууме от сегментации до интеграции границ ролей. Переходы между ролями требуют усилий, поэтому нужны ритуалы перехода.",
+       "how": "Для всех: дорога домой, прогулка, переодевание, 5 минут тишины в машине перед входом в дом.",
+       "src": "Ashforth, Kreiner & Fugate (2000), AMR 25(3): 472–491"
+      },
+      {
+       "name": "Сегментаторы и интеграторы",
+       "ev": "B",
+       "desc": "Стили границ: интеграторы, сепараторы (сегментаторы) и чередующие. Связь стиля с благополучием в основном корреляционная.",
+       "how": "Сегментаторам — жёсткий конец рабочего дня; интеграторам — гибкость, но «священные» блоки: ужин, сон, время пары; чередующим — циклы интенса и восстановления.",
+       "src": "Kossek & Lautsch (2012), Organizational Psychology Review 2(2)"
+      },
+      {
+       "name": "Конфликт «работа — семья»",
+       "ev": "A/B",
+       "desc": "Три формы: временной, конфликт напряжения и поведенческий; конфликт двунаправленный. Модель классическая и сильная, конкретные интервенции доказаны слабее.",
+       "how": "Против временного — недельное планирование и общий календарь; против напряжения — буфер восстановления 15–20 минут и сон; против поведенческого — ритуал смены роли.",
+       "src": "Greenhaus & Beutell (1985), AMR 10(1): 76–88"
+      },
+      {
+       "name": "Четыре конфорки",
+       "ev": "C",
+       "desc": "Метафора Седариса: семья, друзья, здоровье, работа; чтобы преуспеть, нужно выключить одну, а чтобы преуспеть по-настоящему — две. Литературная метафора, но полезна для разговора о приоритетах.",
+       "how": "Не выключайте навсегда, а регулируйте огонь по сезонам; объединяйте конфорки (спорт с друзьями, хобби с детьми).",
+       "src": "D. Sedaris, «Laugh, Kookaburra», The New Yorker, 2009"
+      },
+      {
+       "name": "168 часов (Vanderkam)",
+       "ev": "B/C",
+       "desc": "В неделе 168 часов: 40 ч работы и 56 ч сна дают 96, остаётся 72 часа. Метод: записывать час за часом 1–3 недели, затем перераспределять. Сам дневник времени — стандартный научный метод.",
+       "how": "Мерьте баланс неделей: во вторник 11 часов работы, в пятницу 5 и спорт с детьми. В пятницу или воскресенье выберите 3 приоритета: карьера, семья, личное.",
+       "src": "L. Vanderkam, «168 Hours», 2010"
+      },
+      {
+       "name": "Выгорание: МКБ-11 QD85",
+       "ev": "A",
+       "desc": "ВОЗ: синдром, возникший из-за хронического стресса на рабочем месте, с которым не удалось справиться. Три измерения: истощение, цинизм и дистанцирование, снижение эффективности. Это профессиональный феномен, а не болезнь; родительское выгорание изучается отдельно.",
+       "how": "Раз в неделю чек-ин по шкале 1–10: энергия, цинизм, эффективность; работайте и со структурными факторами (нагрузка, контроль, справедливость).",
+       "src": "WHO ICD-11, QD85 (28.05.2019, с 01.01.2022); Maslach & Jackson (1981)"
+      }
+     ]
+    },
+    {
+     "name": "Сон",
+     "children": [
+      {
+       "name": "Сон взрослых не менее 7 часов",
+       "ev": "A",
+       "desc": "AASM и SRS: взрослым регулярно 7 часов и больше; меньше связано с набором веса, диабетом, гипертонией, депрессией и смертностью. NSF называет 7–9 часов.",
+       "how": "Сон — первый блок недельного плана; для родителей младенцев — сон «посменно».",
+       "src": "Watson et al. (2015), Sleep 38(6): 843–844; Hirshkowitz et al. (2015)"
+      },
+      {
+       "name": "Сон от подъёма назад",
+       "ev": "A",
+       "desc": "Фиксируйте подъём (±30–60 минут), отсчитайте 7,5–9 часов в постели, это и есть «свет выключен». За 60 минут до сна без яркого света и рабочих задач. Регулярность сна — самостоятельный фактор здоровья (Windred 2024, сверить).",
+       "how": "Семейный план стройте от отбоев детей.",
+       "src": "02_modern_science.md, раздел 6.1; Windred et al. (2024)"
+      },
+      {
+       "name": "Микроперерывы",
+       "ev": "B",
+       "desc": "Мета-анализ: короткие перерывы повышают бодрость и снижают усталость, но слабо влияют на результативность (цитируется по памяти).",
+       "how": "Включайте короткие перерывы в рабочие блоки заранее.",
+       "src": "Albulescu et al. (2022), PLOS ONE"
+      },
+      {
+       "name": "Отпуск",
+       "ev": "B",
+       "desc": "Эффект отпуска затухает через 2–4 недели, поэтому лучше несколько коротких перерывов в год плюс еженедельный полноценный выходной (источник сверить).",
+       "how": "Планируйте несколько коротких отпусков, а не один длинный.",
+       "src": "de Bloom et al. (2009)"
+      }
+     ]
+    },
+    {
+     "name": "Спорт",
+     "children": [
+      {
+       "name": "ВОЗ 2020: взрослые",
+       "ev": "A",
+       "desc": "150–300 минут умеренной аэробной активности в неделю, или 75–150 интенсивной, и силовые упражнения 2 и более дней в неделю. Старше 65 лет добавляются баланс и функциональные силовые 3 и более дней. Любая активность лучше, чем никакой.",
+       "how": "Минимальная эффективная доза для занятых: 2 силовые по 20–30 минут и 20–30 минут быстрой ходьбы в день.",
+       "src": "Bull et al. (2020), British Journal of Sports Medicine 54: 1451–1462"
+      },
+      {
+       "name": "ВОЗ 2020: дети 5–17 лет",
+       "ev": "A",
+       "desc": "В среднем 60 минут в день умеренной и интенсивной активности, интенсивная аэробная и на укрепление мышц и костей 3 дня в неделю; ограничивать рекреационные экраны.",
+       "how": "Игры, секции и активная дорога в школу считаются.",
+       "src": "WHO (2020)"
+      },
+      {
+       "name": "VILPA",
+       "ev": "B",
+       "desc": "Короткие (до 1–2 минут) всплески интенсивной бытовой активности. В когорте UK Biobank (25 241 человек, ~6,9 года) медиана около 3 всплесков в день связана с ~38–40 % меньшим риском смерти от всех причин. Наблюдательные данные, причинность не доказана.",
+       "how": "Лестница вместо лифта, быстрая ходьба с сумками, догонялки с детьми.",
+       "src": "Stamatakis et al. (2022), Nature Medicine 28: 2521–2529"
+      },
+      {
+       "name": "Exercise snacks",
+       "ev": "B",
+       "desc": "Короткие (до минуты) интенсивные упражнения несколько раз в день улучшают кардиореспираторную форму у ранее неактивных (обзоры, источник сверить).",
+       "how": "1–2 минуты приседаний или бёрпи между созвонами.",
+       "src": "Jenkins et al. (2019); Islam et al. (2022)"
+      },
+      {
+       "name": "Прерывать сидение",
+       "ev": "B",
+       "desc": "Перерывы в сидении каждые 30–60 минут (2–5 минут ходьбы) улучшают постпрандиальную гликемию.",
+       "how": "Ставьте вставание в Pomodoro-перерывы или после каждого звонка.",
+       "src": "Dunstan et al. (2012), Diabetes Care"
+      },
+      {
+       "name": "Тренировка и мышление",
+       "ev": "B",
+       "desc": "Острая нагрузка слегка улучшает когнитивные функции: SMD около 0,2–0,36 для исполнительных функций в поздних обзорах, максимум сразу после нагрузки.",
+       "how": "10–20 минут умеренной активности перед сложной задачей, экзаменом или встречей.",
+       "src": "Chang et al. (2012), Brain Research 1453"
+      },
+      {
+       "name": "Время тренировки",
+       "ev": "B",
+       "desc": "Сила и мощность выше во второй половине дня, но прирост силы от времени не зависит (мета-анализ Grgic 2019). Данные по метаболическому здоровью смешанные. Умеренная вечерняя тренировка сон обычно не ухудшает, интенсивную менее чем за час до сна лучше избегать.",
+       "how": "Лучшее время — то, которое вы стабильно соблюдаете; жаворонкам и родителям малышей часто подходит утро.",
+       "src": "Grgic et al. (2019), Chronobiol Int 36(4); Sabag et al. (2024), Diabetes Care 47(5)"
+      },
+      {
+       "name": "Встраивание: активная дорога",
+       "desc": "Пешком или на велосипеде на работу и в школу с ребёнком, выйти на 1–2 остановки раньше. Велосипед до работы связан с меньшим риском смертности (источник сверить).",
+       "how": "Сделайте дорогу тренировкой.",
+       "src": "Celis-Morales et al. (2017), BMJ"
+      },
+      {
+       "name": "Встраивание: спорт с детьми и друзьями",
+       "desc": "Велосипед, бег с коляской, игры на площадке, походы, скалодром, бассейн; walking meetings; тренировка как встреча в календаре (Upholder, Questioner) или с партнёром (Obliger).",
+       "how": "Совмещайте спорт и семью или друзей.",
+       "src": "03_personalization_balance.md, раздел 2.7.5"
+      },
+      {
+       "name": "Встраивание: weekend warrior",
+       "desc": "Одна–две длинные тренировки в выходные тоже дают пользу, что важно для врачей и предпринимателей (источники сверить).",
+       "how": "При плотной неделе концентрируйте активность в выходных.",
+       "src": "O'Donovan et al. (2017), JAMA Intern Med; Khurshid et al. (2023), JAMA"
+      }
+     ]
+    },
+    {
+     "name": "Дети",
+     "children": [
+      {
+       "name": "Время с детьми: качество и количество (Milkie)",
+       "ev": "B",
+       "desc": "Количество материнского времени с детьми 3–11 лет почти не связано с исходами; у подростков 12–18 важно вовлечённое время. Важнее доход и образование матери и материнский стресс (тревожность, недосып, вина). Дети хотели родителей менее уставших.",
+       "how": "Не гонитесь за часами: нужны регулярные периоды вовлечённого времени без телефона и родитель с ресурсом. Подросткам важна доступность: ужин, дорога, вечер.",
+       "src": "Milkie, Nomaguchi & Denny (2015), J Marriage Fam 77(2): 355–372"
+      },
+      {
+       "name": "«Особое время» 10–20 минут",
+       "ev": "B",
+       "desc": "Ежедневно один на один с каждым ребёнком, ребёнок ведёт игру. Элемент поведенческих родительских программ.",
+       "how": "Телефон в другую комнату; дорога в сад, купание и чтение перед сном — встроенные точки контакта; раз в месяц «свидание» с каждым ребёнком (при 2+ детях).",
+       "src": "PCIT, Special time (03_personalization_balance.md, 2.8.1)"
+      },
+      {
+       "name": "Сон детей по возрастам",
+       "ev": "A",
+       "desc": "AASM (одобрено AAP), часов за 24 часа с дневным сном: 4–12 мес 12–16, 1–2 года 11–14, 3–5 лет 10–13, 6–12 лет 9–12, 13–18 лет 8–10. Младше 4 месяцев не установлено.",
+       "how": "Отбой ребёнка — якорь вечера: ребёнок 6 лет встаёт в 7:00, отбой 19:30–20:30, ужин 18:00–18:30, «окно родителей» после 20:30.",
+       "src": "Paruthi et al. (2016), J Clin Sleep Med 12(6): 785–786"
+      },
+      {
+       "name": "Экраны: ВОЗ",
+       "ev": "B",
+       "desc": "До года экранов нет; в 1 год сидячее экранное время не рекомендуется; 2–4 года не более часа в день, чем меньше, тем лучше.",
+       "how": "Зоны и время без экранов: спальня, стол, час до сна.",
+       "src": "WHO (2019), guidelines for children under 5"
+      },
+      {
+       "name": "Экраны: AAP",
+       "ev": "B",
+       "desc": "До 18 месяцев избегать экранов, кроме видеозвонков; 18–24 месяца только качественный контент вместе с родителем; 2–5 лет не более часа; с 6 лет последовательные ограничения. Часть экспертов (Przybylski, RCPCH) считает данные недостаточными для жёстких порогов.",
+       "how": "Составьте семейный медиаплан; родитель — модель: телефон на ужине убран. Актуальную версию рекомендаций AAP стоит сверить.",
+       "src": "AAP (2016), Pediatrics 138(5): e20162591"
+      }
+     ]
+    },
+    {
+     "name": "Семья",
+     "children": [
+      {
+       "name": "Совместные трапезы",
+       "ev": "B",
+       "desc": "Мета-анализ 17 исследований (~182 836 детей): при 3 и более общих приёмах пищи в неделю шансы избыточного веса ниже на 12 %, нездорового питания на 20 %, расстройств пищевого поведения на 35 %, здорового питания выше на 24 %. Данные наблюдательные.",
+       "how": "Цель 3–5 общих приёмов пищи в неделю (подойдёт и завтрак выходного), без экранов, один вопрос дня.",
+       "src": "Hammons & Fiese (2011), Pediatrics 127(6): e1565–e1574"
+      },
+      {
+       "name": "Семейные ритуалы",
+       "ev": "B",
+       "desc": "Ритуалы и рутины связаны с благополучием детей и чувством идентичности (обзор Fiese 2002, источник сверить).",
+       "how": "Еженедельные ритуалы: пятничная пицца, воскресная прогулка, настолка.",
+       "src": "Fiese et al. (2002), J Family Psychology"
+      },
+      {
+       "name": "Семейное совещание (Feiler)",
+       "ev": "C",
+       "desc": "Еженедельно 15–20 минут, три вопроса из agile-ретроспективы: что получилось, что нет, над чем работаем. Работает с детьми примерно с 4–5 лет.",
+       "how": "Воскресенье 18:00: календарь недели, три вопроса, одна цель недели, распределение обязанностей.",
+       "src": "B. Feiler, «The Secrets of Happy Families», 2013"
+      },
+      {
+       "name": "Fair Play (Rodsky)",
+       "ev": "B/C",
+       "desc": "Колода из 100 карт задач; владелец карты отвечает за замысел, планирование и исполнение (CPE), что снижает ментальную нагрузку. Метод слабо исследован, а сама проблема неравного когнитивного труда — средне.",
+       "how": "Раз в квартал сессия Fair Play, на семейном совещании ребалансировка при изменении нагрузки.",
+       "src": "E. Rodsky, «Fair Play», 2019; Daminger (2019), ASR 84(4)"
+      }
+     ]
+    },
+    {
+     "name": "Пара",
+     "children": [
+      {
+       "name": "Gottman: «магические шесть часов»",
+       "ev": "B/C",
+       "desc": "Пары, у которых отношения улучшались, уделяли браку примерно на 6 часов в неделю больше: прощания, разговор о дне 20 минут × 5, признательность, знаки привязанности, свидание около 2 часов, разговор об отношениях около часа. Основано на наблюдениях института, не на RCT.",
+       "how": "Ежедневно 15–20 минут разговора «как прошёл день»; раз в неделю свидание.",
+       "src": "Gottman & Silver (1999/2015)"
+      },
+      {
+       "name": "Свидание раз в неделю",
+       "ev": "B/C",
+       "desc": "Пары, которые проводят время вдвоём хотя бы раз в неделю, чаще сообщают о высоком качестве отношений (корреляции; цифры и год издания сверить).",
+       "how": "Свидание не обязательно вечером вне дома: обед вдвоём, прогулка после отбоя детей, «свидание дома» без телефонов.",
+       "src": "Wilcox & Dew (2012), The Date Night Opportunity"
+      },
+      {
+       "name": "Новое и волнующее вдвоём",
+       "ev": "B",
+       "desc": "Совместные новые и волнующие занятия повышают удовлетворённость отношениями (эксперимент и опрос).",
+       "how": "Чередуйте привычное свидание с новым опытом.",
+       "src": "Aron et al. (2000), JPSP 78(2)"
+      }
+     ]
+    },
+    {
+     "name": "Друзья",
+     "children": [
+      {
+       "name": "Holt-Lunstad: OR 1,50",
+       "ev": "A",
+       "desc": "Мета-анализ 148 исследований (308 849 участников): сильные социальные связи дают OR = 1,50 для выживания, для комплексных мер интеграции OR = 1,91. Эффект сопоставим с курением.",
+       "how": "Фиксированный «дружеский слот»: еженедельная игра, пробежка, ежемесячный ужин.",
+       "src": "Holt-Lunstad, Smith & Layton (2010), PLOS Medicine 7(7): e1000316"
+      },
+      {
+       "name": "Сколько часов на дружбу (Hall)",
+       "ev": "B",
+       "desc": "Около 40–60 часов общения для «приятеля», 80–100 для «друга», более 200 для близкого друга; совместная работа «засчитывается» хуже досугового общения.",
+       "how": "Регулярность важнее интенсивности; совмещайте дружбу со спортом и семейными встречами.",
+       "src": "Hall (2019), J Soc Pers Relationships 36(4): 1278–1296"
+      },
+      {
+       "name": "Harvard Study of Adult Development",
+       "ev": "B",
+       "desc": "Лучшим предиктором здоровья и счастья к 80 годам оказалась удовлетворённость отношениями в 50 лет, выше уровня холестерина. Уникальная продольная когорта (с 1938 г.), но наблюдательная и исходно только мужчины.",
+       "how": "Поддерживайте «социальную форму»: 5-минутный звонок или голосовое родителям 1–2 раза в неделю.",
+       "src": "Waldinger & Schulz, «The Good Life», 2023"
+      }
+     ]
+    },
+    {
+     "name": "Время для себя",
+     "children": [
+      {
+       "name": "20–30 минут «только моего»",
+       "desc": "Родительское выгорание связано с дисбалансом требований и ресурсов, а один из ресурсов — время на восстановление. Матери в среднем имеют меньше «чистого» досуга, чем отцы (цифры сверить).",
+       "how": "Ежедневно 20–30 минут по договорённости с партнёром: утро для одного, вечер для другого.",
+       "src": "Mikolajczak, Gross & Roskam (2019); Bianchi et al. (2006)"
+      },
+      {
+       "name": "Длинное окно раз в неделю",
+       "desc": "Для каждого взрослого 2–4 часа на спорт, хобби или друзей, партнёр полностью берёт детей («тап-аут»). Для одиноких родителей — сети поддержки.",
+       "how": "Обменивайтесь «присмотрами» с другими родителями или бабушками и дедушками.",
+       "src": "03_personalization_balance.md, раздел 2.8.8"
+      },
+      {
+       "name": "Личное восстановление",
+       "desc": "Квота 4–7 часов в неделю (30–60 минут в день): отстранённость, релаксация и контроль по Sonnentag & Fritz; профилактика родительского и профессионального выгорания.",
+       "how": "Закладывайте «ничегонеделание» как плановый блок.",
+       "src": "Sonnentag & Fritz (2007)"
+      }
+     ]
+    }
+   ],
+   "sub": "Сон, спорт, дети, семья, пара, друзья, время для себя"
+  },
+  {
+   "name": "Система 168: итоговый подход",
+   "children": [
+    {
+     "name": "1. Профиль",
+     "children": [
+      {
+       "name": "Ось 1: режим работы и ограничения",
+       "desc": "Офис, удалёнка, смены, уроки или собственное дело; дорога, садик и школа, график детей. Это жёсткие ограничения, которые не двигаются.",
+       "how": "Запишите, что в вашем дне фиксировано, а что можно сдвигать.",
+       "src": "03_personalization_balance.md, часть 0"
+      },
+      {
+       "name": "Ось 2: хронотип",
+       "ev": "A",
+       "desc": "Пик бодрости определяет, куда ставить глубокую работу; MEQ или MCTQ, плюс разница подъёма будни/выходные.",
+       "how": "Определите хронотип за 2 недели наблюдений.",
+       "src": "Horne & Östberg 1976; Roenneberg 2003"
+      },
+      {
+       "name": "Ось 3: потребность в структуре",
+       "ev": "B/C",
+       "desc": "Добросовестность, J/P, моно- или полихронность: нужен подробный график или меню задач с 2–3 якорями.",
+       "how": "Высокая потребность — тайм-блокинг; низкая — MIT, if–then и внешние опоры.",
+       "src": "Steel 2007; Bluedorn 1999"
+      },
+      {
+       "name": "Ось 4: тип подотчётности",
+       "ev": "C",
+       "desc": "Four Tendencies как язык: кому нужна внешняя подотчётность (Obliger), кому «зачем» (Questioner), кому выбор (Rebel).",
+       "how": "Выберите подотчётность, которая реально работает: тренер, партнёр, данные или меню.",
+       "src": "G. Rubin (2017)"
+      },
+      {
+       "name": "Ось 5: социальная энергия и стиль границ",
+       "ev": "B",
+       "desc": "Интро- и экстраверсия с отложенной усталостью; сегментатор, интегратор или чередующий.",
+       "how": "Запланируйте окна восстановления после общения и ритуал перехода «работа — дом».",
+       "src": "Leikas & Ilmarinen 2017; Ashforth et al. 2000"
+      },
+      {
+       "name": "Ось 6: внимание и тревожность",
+       "ev": "B/C",
+       "desc": "СДВГ, нейротизм, склонность к прокрастинации: нужны внешняя структура, короткие списки и вечерняя выгрузка мыслей.",
+       "how": "Добавьте визуальные таймеры, body doubling или план на завтра вечером.",
+       "src": "Steel 2007; Safren et al. 2010"
+      },
+      {
+       "name": "Стадия жизни: дети, пара, хобби",
+       "desc": "Возраст детей (сны, отбои, школа), время пары и набор хобби определяют, сколько часов недели свободно и во что их вкладывать.",
+       "how": "Выпишите возраст каждого ребёнка и его отбой.",
+       "src": "03_personalization_balance.md, часть 3"
+      }
+     ]
+    },
+    {
+     "name": "2. Фундамент",
+     "children": [
+      {
+       "name": "Сон от подъёма назад, не менее 7 часов",
+       "ev": "A",
+       "desc": "Фиксированное время подъёма и отсчёт назад: взрослому не менее 7 часов.",
+       "how": "Сон — первый блок плана, он неприкосновенен.",
+       "src": "Watson et al. 2015"
+      },
+      {
+       "name": "Отбои детей",
+       "ev": "A",
+       "desc": "Время отбоя ребёнка по возрастной норме AASM задаёт структуру вечера.",
+       "how": "Выстройте ужин, купание и чтение вокруг отбоя.",
+       "src": "Paruthi et al. 2016"
+      },
+      {
+       "name": "Минимум движения по ВОЗ",
+       "ev": "A",
+       "desc": "150–300 минут умеренной активности в неделю и силовые 2 и более дней; детям в среднем 60 минут в день.",
+       "how": "Запишите тренировки как встречи, дополните шагами и exercise snacks.",
+       "src": "Bull et al. 2020"
+      }
+     ]
+    },
+    {
+     "name": "3. Смысл",
+     "children": [
+      {
+       "name": "5–7 ролей (Кови)",
+       "ev": "C",
+       "desc": "Руководитель, папа или мама, партнёр, спортсмен, друг, хобби и «я сам: точить пилу».",
+       "how": "Запишите свои роли и по одной цели на роль.",
+       "src": "S. Covey (1989)"
+      },
+      {
+       "name": "Ценности (Франклин)",
+       "ev": "C",
+       "desc": "5–7 ценностей, под каждую 1–3 долгосрочные цели; ценность без задач неделю — сигнал.",
+       "how": "Пересматривайте ценности раз в год.",
+       "src": "Б. Франклин; H. Smith (1994)"
+      },
+      {
+       "name": "2–3 цели на квартал",
+       "ev": "A/C",
+       "desc": "SMART для привычек и обязательных целей (здоровье, финансы, дети), OKR-стиль для развития и проектов; не смешивать в одной цели.",
+       "how": "Максимум 2–3 цели, каждая с измеримым результатом.",
+       "src": "Locke & Latham 2002; Doran 1981; Doerr 2018"
+      }
+     ]
+    },
+    {
+     "name": "4. Неделя (168 часов)",
+     "children": [
+      {
+       "name": "Большие камни по ролям",
+       "ev": "B",
+       "desc": "Для каждой роли 1–2 камня на неделю; в календарь они идут первыми, до встреч и рутины.",
+       "how": "Воскресная сессия 20–30 минут.",
+       "src": "Covey, Merrill & Merrill (1994)"
+      },
+      {
+       "name": "Weekly review и семейное совещание",
+       "ev": "C",
+       "desc": "Обзор недели 30–60 минут и 15-минутная семейная планёрка: календарь, три вопроса, цель недели, обязанности.",
+       "how": "Поставьте оба события в календарь на одно и то же время недели.",
+       "src": "Allen 2001; Feiler 2013"
+      },
+      {
+       "name": "Ориентиры квот, часов из 168",
+       "children": [
+        {
+         "name": "Сон: 52–60",
+         "desc": "База 56 часов (8 × 7). AASM и SRS: не менее 7 часов в ночь (49 в неделю), NSF 7–9. Запас на засыпание и пробуждения.",
+         "how": "Сон — первый блок плана.",
+         "src": "Watson 2015; Hirshkowitz 2015"
+        },
+        {
+         "name": "Работа с дорогой: 40–48",
+         "desc": "Например, 40 часов работы и 5 часов дороги. Хроническая работа 55 часов и больше в неделю связана с повышенным риском инсульта и ИБС (сверить).",
+         "how": "Ставьте предел часов и держите его.",
+         "src": "Pega et al. (2021), Environment International"
+        },
+        {
+         "name": "Спорт: 3–5 структурированных",
+         "desc": "150–300 минут умеренной активности плюс силовые 2 и более дней; активная дорога и игры с детьми засчитываются.",
+         "how": "Плюс ежедневная бытовая активность.",
+         "src": "Bull et al. 2020"
+        },
+        {
+         "name": "Дети: 7–14 вовлечённых",
+         "desc": "Около 1–2 часов в день (уроки, чтение, игры, дорога) плюс выходные; качество и родитель с ресурсом важнее максимума часов.",
+         "how": "10–20 минут «особого времени» на ребёнка в день.",
+         "src": "Milkie et al. 2015"
+        },
+        {
+         "name": "Семья целиком: 4–6",
+         "desc": "Общие приёмы пищи (3–5 × 40 минут), семейное совещание 15–20 минут и одна семейная активность в выходные (2–3 часа).",
+         "how": "Не меньше трёх общих трапез в неделю.",
+         "src": "Hammons & Fiese 2011; Feiler 2013"
+        },
+        {
+         "name": "Пара: 5–6",
+         "desc": "Прощания и встречи, разговор о дне 20 минут × 5, признательность, свидание около 2 часов, разговор об отношениях около часа.",
+         "how": "Время вдвоём не реже раза в неделю.",
+         "src": "Gottman «magic six hours»; Wilcox & Dew"
+        },
+        {
+         "name": "Хобби: 3–6",
+         "desc": "Serious leisure требует регулярных слотов: два раза по 60–90 минут и один длинный блок.",
+         "how": "Поставьте хобби-слоты в календарь.",
+         "src": "Sonnentag & Fritz 2007; Stebbins"
+        },
+        {
+         "name": "Друзья: 2–5",
+         "desc": "Дружба требует десятков и сотен часов; можно совмещать со спортом и хобби.",
+         "how": "Один фиксированный дружеский слот в неделю.",
+         "src": "Holt-Lunstad 2010; Hall 2019"
+        },
+        {
+         "name": "Время для себя: 4–7",
+         "desc": "Около 30–60 минут в день: отстранённость, релаксация, контроль; профилактика выгорания.",
+         "how": "Планируйте как встречу.",
+         "src": "Sonnentag & Fritz 2007"
+        },
+        {
+         "name": "Быт: 10–15 на взрослого",
+         "desc": "Распределять по Fair Play с владением задачи (CPE), автоматизировать и делегировать всё, что можно.",
+         "how": "Раз в квартал сессия Fair Play.",
+         "src": "Rodsky 2019"
+        },
+        {
+         "name": "Личный уход и еда: 8–10",
+         "desc": "Гигиена, еда вне семейных трапез.",
+         "how": "Учитывайте в сумме 168 часов.",
+         "src": "03_personalization_balance.md, раздел (б)"
+        },
+        {
+         "name": "Планирование и буфер: 4–8",
+         "desc": "Недельный обзор 30–45 минут, ежедневные 10 минут и непредвиденное. Итог примера: 56 + 45 + 4 + 12 + 5 + 6 + 4 + 3 + 5 + 12 + 9 + 7 = 168.",
+         "how": "Буфер защищает от «плана-фикции».",
+         "src": "Aeon et al. 2021"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "5. День",
+     "children": [
+      {
+       "name": "Скелет дня",
+       "children": [
+        {
+         "name": "Якоря",
+         "ev": "A",
+         "desc": "Стабильное время подъёма, сон, еда, отбои детей: жёсткие точки, вокруг которых строится остальное.",
+         "how": "Подъём в выходные не позже чем на час позже.",
+         "src": "AASM; Wittmann 2006"
+        },
+        {
+         "name": "Пик",
+         "ev": "B",
+         "desc": "1–3 блока по 60–90 минут на главное дело без уведомлений и встреч.",
+         "how": "Для жаворонка утро, для совы поздний день.",
+         "src": "Синхрония: Chronobiology International (2025)"
+        },
+        {
+         "name": "Спад",
+         "ev": "A/B",
+         "desc": "Около 13:00–16:00: рутина, встречи, звонки, лёгкая тренировка, прогулка или дневной сон 10–20 минут.",
+         "how": "Обед умеренный, без «углеводной бомбы».",
+         "src": "Monk 2005"
+        },
+        {
+         "name": "Восстановление",
+         "ev": "C",
+         "desc": "Поздний день и вечер: инсайтные и творческие задачи, стратегия, планирование.",
+         "how": "Ставьте сюда задачи без жёсткой точности.",
+         "src": "D. Pink (2018)"
+        },
+        {
+         "name": "Закрытие",
+         "ev": "B/C",
+         "desc": "Shutdown ritual 15–20 минут: перенос хвостов, первый шаг на завтра, «рабочий день закрыт».",
+         "how": "Закрытие — граница «работа — семья».",
+         "src": "Newport 2016; Masicampo & Baumeister 2011"
+        },
+        {
+         "name": "Семейное окно",
+         "desc": "Время вовлечённого общения без телефона: ужин, уроки, чтение, особое время 10–20 минут с каждым ребёнком.",
+         "how": "Телефон в другую комнату.",
+         "src": "Milkie et al. 2015"
+        },
+        {
+         "name": "Своё время",
+         "desc": "Хобби, спорт, друзья или пара; отстранённость от работы и контроль над собственным временем.",
+         "how": "Не оставляйте на «остаток вечера».",
+         "src": "Sonnentag & Fritz 2007"
+        },
+        {
+         "name": "Выгрузка и сон",
+         "ev": "B",
+         "desc": "Пятиминутный конкретный список «завтра» перед сном ускорял засыпание в эксперименте со студентами; затем сон по плану.",
+         "how": "Свет приглушите за 1–2 часа до сна.",
+         "src": "Scullin et al. (2018)"
+        }
+       ]
+      },
+      {
+       "name": "Формула дня: 1 + 3 + 3 + 1",
+       "desc": "1 главное дело, 3 средних, 3 поддерживающих и 1 камень из нерабочей роли (тренировка, ребёнок, партнёр, друг). Собрано из 1-3-5, 3-3-3, Highlight и камней Кови.",
+       "how": "Нерабочий камень записывайте в день так же, как рабочую задачу.",
+       "src": "Синтез: 1-3-5, 3-3-3, Make Time, Covey"
+      },
+      {
+       "name": "Буфер 20–40 %",
+       "ev": "A",
+       "desc": "Ошибка планирования делает блоки слишком короткими; ALPEN предлагает планировать не больше 60 % времени, в семье с малышами буфер больше.",
+       "how": "Оставляйте в каждом дне свободную часть.",
+       "src": "Buehler et al. 1994; Seiwert (ALPEN)"
+      },
+      {
+       "name": "Оценка времени ×1,5",
+       "ev": "A",
+       "desc": "Первую оценку умножайте на 1,5, для новых и «семейных» задач на 2; сверяйте с журналом «план против факта».",
+       "how": "Делайте это по умолчанию, особенно в AI-планировщиках.",
+       "src": "Buehler et al. 1994; Kahneman & Tversky 1979"
+      }
+     ]
+    },
+    {
+     "name": "6. Исполнение",
+     "children": [
+      {
+       "name": "Техника фокуса по профилю",
+       "children": [
+        {
+         "name": "Pomodoro 25/5",
+         "ev": "B",
+         "desc": "Для старта, неприятных задач, СДВГ и учёбы; запланированные перерывы дали тот же результат быстрее и с лучшим настроением.",
+         "how": "Родителю: 1–2 помидора в сон ребёнка.",
+         "src": "Biwer et al. (2023)"
+        },
+        {
+         "name": "Блоки 50/10",
+         "ev": "B/C",
+         "desc": "Для глубокой работы с долгим входом (код, письмо); аналогично 52/17 из наблюдательных данных DeskTime.",
+         "how": "Перерыв делайте настоящим, не соцсети.",
+         "src": "02_modern_science.md, раздел 2.2; DeskTime 2014"
+        },
+        {
+         "name": "90-минутные блоки",
+         "ev": "B/C",
+         "desc": "Практический предел концентрации большинства людей; не закон физиологии.",
+         "how": "2–4 часа глубокой работы в день суммарно.",
+         "src": "Newport; Ericsson et al. 1993"
+        }
+       ]
+      },
+      {
+       "name": "Batching: пакеты однотипного",
+       "desc": "Почта и мессенджеры 2–4 раза в день в фиксированное время, звонки и бытовые дела пакетом. Опирается на издержки переключения (A).",
+       "how": "Одна задача на блок, уведомления выключены.",
+       "src": "Rubinstein et al. 2001"
+      },
+      {
+       "name": "If–then и планы на препятствия",
+       "ev": "A",
+       "desc": "«В 18:30 после того, как уложу младшего, 30 минут в зале; если не заснул, 15 минут дома с гантелями».",
+       "how": "К каждому ключевому пункту дня добавьте запасной вариант.",
+       "src": "Gollwitzer & Sheeran 2006"
+      },
+      {
+       "name": "Заметка возобновления",
+       "ev": "B",
+       "desc": "1–2 минуты перед переключением: где я, следующий шаг, что держать в голове.",
+       "how": "Перед встречей или поездкой за ребёнком.",
+       "src": "Leroy & Glomb 2018"
+      }
+     ]
+    },
+    {
+     "name": "7. Обратная связь",
+     "children": [
+      {
+       "name": "Ежедневный shutdown",
+       "ev": "B/C",
+       "desc": "15–20 минут в конце рабочего дня; вечером 5 минут на список «завтра».",
+       "how": "Запишите, где остановились.",
+       "src": "Newport 2016; Scullin 2018"
+      },
+      {
+       "name": "Еженедельный обзор",
+       "ev": "C",
+       "desc": "Что сработало, что нет, что меняем; ребалансировка по Fair Play.",
+       "how": "Пятница или воскресенье плюс семейное совещание.",
+       "src": "Allen 2001"
+      },
+      {
+       "name": "Ежемесячно: колесо баланса и чек выгорания",
+       "ev": "A/C",
+       "desc": "Колесо — рефлексия без валидации; выгорание — определение ВОЗ (истощение, цинизм, неэффективность).",
+       "how": "Выберите 1–2 просевшие сферы и добавьте им блоки.",
+       "src": "Meyer; WHO ICD-11 QD85"
+      },
+      {
+       "name": "Ежеквартально: ретро целей",
+       "desc": "Оценка прогресса, что оставить, что убрать, новые 2–3 цели на квартал.",
+       "how": "Объедините с OKR-ритмом.",
+       "src": "Doerr 2018"
+      },
+      {
+       "name": "Раз в полгода: 1–2 недели хронометража",
+       "ev": "B",
+       "desc": "Самонаблюдение как «диагностический курс», а не пожизненный учёт; калибровка длительностей задач.",
+       "how": "Записывайте всё фактическое время по категориям.",
+       "src": "Любищев; Harkin et al. 2016"
+      }
+     ]
+    }
+   ],
+   "sub": "Семь слоёв от профиля до обратной связи"
+  },
+  {
+   "name": "Профили",
+   "children": [
+    {
+     "name": "Жаворонок-офис с двумя детьми",
+     "desc": "Подъём около 5:45, спорт 6:00–6:40, глубокая работа 9:00–12:00, встречи после обеда, shutdown в 16:30–17:30, семейный ужин 18:30, уроки и особое время с детьми, затем пара. Идея дня: баланс задаётся на уровне недели, а день остаётся простым.",
+     "how": "Стек: Эйзенхауэр + тайм-блокинг (2 защищённых блока) + ALPEN-буфер + недельный план Кови; для баланса Кови → тайм-блокинг → Айви Ли или 1-3-5 → Pomodoro или 52/17 → вечерний контроль. Неделя: 3–5 семейных ужинов, Fair Play и совещание в воскресенье.",
+     "src": "03_personalization_balance.md, профиль 1; 01_classic_methods.md, 23.2 и 23.4"
+    },
+    {
+     "name": "Сова-разработчик на удалёнке",
+     "desc": "Подъём около 9:30, «фальшивая дорога» на свету, встречи кластером, тренировка в 14:30, глубокая работа 15:00–19:00 (пик), shutdown в 19:00, вечером друзья и хобби не связанное с кодом. Идея дня: чёткая граница работы и жизни.",
+     "how": "Стек: тайм-блокинг + 52/17 или блоки по 90 минут + личный Kanban с WIP = 2 + «лягушка» в пик.",
+     "src": "03_personalization_balance.md, профиль 2; 01_classic_methods.md, 23.4"
+    },
+    {
+     "name": "Сменный медик",
+     "desc": "Планируется по блокам смен, а не по дням. После ночи якорный сон 8:00–12:00, перед ночной сменой профилактический сон; в выходные якорный сон 3:00–7:00. Идея дня: защитить сон и семейные ритуалы по календарю смен.",
+     "how": "Стек: календарь для жёстких дел; 1-3-5 или 3 MIT только в выходные; Кови на уровне цикла смен.",
+     "src": "03_personalization_balance.md, профиль 3; 01_classic_methods.md, 23.4"
+    },
+    {
+     "name": "Предприниматель-родитель",
+     "desc": "Три главные задачи в 8:00, глубокая работа 8:30–11:30, тренировка 20–30 минут, shutdown в 16:30–17:00, 17:30–20:00 только ребёнок и семья без телефона. Идея дня: искусственные рамки вместо бесконечной работы, лимит около 50 часов и «CEO-день».",
+     "how": "Стек: GTD (сбор) + Кови или OKR (смысл, квартал) + Айви Ли (день) + делегирование из ABCDE.",
+     "src": "03_personalization_balance.md, профиль 4; 01_classic_methods.md, 23.4"
+    },
+    {
+     "name": "Учитель",
+     "desc": "Подъём в 6:15, короткая тренировка, уроки, окно тишины 14:30–15:00, подготовка и проверка в школе, спорт или хобби, затем семья. Идея дня: проверка только в фиксированных блоках, не дома.",
+     "how": "Стек: ALPEN только для свободной части (уроки заданы расписанием) + тайм-блокинг блока проверки + shutdown как граница.",
+     "src": "03_personalization_balance.md, профиль 5; 01_classic_methods.md, ALPEN"
+    },
+    {
+     "name": "Фрилансер-творец",
+     "desc": "Творческий блок 8:30–11:30, движение, клиенты и админка в «тематическом окне», вечером хобби другой модальности. Идея дня: «меню» задач вместо жёсткого расписания и поддержка внешней подотчётности.",
+     "how": "Стек: Bullet Journal + один большой блок «потока» + Парето + мягкий Kanban; Pomodoro только для рутины.",
+     "src": "03_personalization_balance.md, профиль 6; 01_classic_methods.md, 23.4"
+    },
+    {
+     "name": "Студент",
+     "desc": "Подъём ±1 час каждый день, пары и учебные блоки 50–90 минут, интервальное повторение, групповой спорт, подработка или друзья. Идея дня: стабильный сон и якоря вместо ночных штурмов.",
+     "how": "Стек: Pomodoro + SMART + тайм-блокинг сессий + хронометраж на одну неделю для калибровки.",
+     "src": "03_personalization_balance.md, профиль 7; 01_classic_methods.md, 23.4"
+    },
+    {
+     "name": "Родитель в декрете",
+     "desc": "План по окнам сна ребёнка: утренняя прогулка с коляской 45–90 минут, на дневной сон одно дело (свой сон, хобби или звонок другу), вечер с партнёром, ночные смены. Идея дня: один приоритет на окно, минимум один социальный контакт в день.",
+     "how": "Стек: Кови (роли, камни) + жёсткие и гибкие задачи Архангельского + контексты GTD + Pomodoro для коротких окон + буфер 40 % и больше.",
+     "src": "03_personalization_balance.md, профиль 8; 01_classic_methods.md, 23.4"
+    },
+    {
+     "name": "Руководитель",
+     "desc": "Стратегический блок 8:30–10:00 без встреч, встречи по 25/50 минут и walking 1:1, обзор дня и делегирование в 17:30, затем семья. Идея дня: правила доступности вечером и в выходные и отпуск без почты.",
+     "how": "Стек: GTD (сбор) + Кови или OKR + Айви Ли для дня + ABCDE для делегирования.",
+     "src": "03_personalization_balance.md, профиль 9; 01_classic_methods.md, 23.4"
+    },
+    {
+     "name": "СДВГ-специалист, гибрид",
+     "desc": "Ритуал планирования 10 минут, три главные задачи, спринты по 25 минут с body doubling, движение между блоками, shutdown с записью «где остановился». Идея дня: внешняя структура и гибкий план вместо стыда за сорванный график.",
+     "how": "Стек: бумажный визуальный план + таймеры + Pomodoro + 3 MIT (Айви Ли или ZTD) + ×1,5 к оценкам; рядом специалист.",
+     "src": "03_personalization_balance.md, профиль 10; 02_modern_science.md, раздел 8"
+    }
+   ],
+   "sub": "Десять типовых дней и стек методик"
+  },
+  {
+   "name": "Мифы и развенчания",
+   "children": [
+    {
+     "name": "Ego depletion: «сила воли — топливо»",
+     "kind": "myth",
+     "desc": "Многолабораторные preregistered-реплики не нашли эффекта: Hagger et al. (2016, 23 лаборатории, N = 2141) d = 0,04, Vohs et al. (2021, 36 лабораторий, около 3531 участник) d = 0,06. Субъективная усталость реальна, но «запас воли» не подтверждён.",
+     "how": "Предрешайте повторяющиеся выборы ради времени и внимания, а не «топлива воли».",
+     "src": "Hagger et al. 2016, Perspect Psychol Sci 11(4); Vohs et al. 2021, Psychol Sci 32(10)"
+    },
+    {
+     "name": "«Голодные судьи»",
+     "kind": "myth",
+     "desc": "Доля благоприятных решений падала почти до нуля к концу сессии и восстанавливалась после еды, но порядок дел был неслучайным (заключённые без адвоката шли в конце), а критики считают эффект неправдоподобно большим.",
+     "how": "Не используйте как доказательство «усталости от решений».",
+     "src": "Danziger et al. (2011), PNAS; критика: Weinshall-Margel & Shapard, Glöckner"
+    },
+    {
+     "name": "«Многозадачность съедает 40 % времени»",
+     "kind": "myth",
+     "desc": "Цифра не результат эксперимента Rubinstein и соавторов, а оценка Д. Мейера на странице APA, и проверить её напрямую не удалось. Сам эффект издержек переключения подтверждён.",
+     "how": "Говорите «экспертная оценка», а не «измерено».",
+     "src": "APA, Multitasking: switching costs (2006)"
+    },
+    {
+     "name": "«23 минуты на возвращение к задаче»",
+     "kind": "myth",
+     "desc": "Это среднее время до возврата к прерванной задаче (81,9 % возобновлялись в тот же день, с ~2 промежуточными задачами), а не время восстановления концентрации.",
+     "how": "Цитируйте корректно: время до возврата.",
+     "src": "Mark et al., CHI 2005, 2008"
+    },
+    {
+     "name": "«Привычка за 21 день» и «ровно 66 дней»",
+     "kind": "myth",
+     "desc": "66 дней — медиана по подгруппе (около половины выборки), диапазон 18–254, причём 254 — экстраполяция. В мета-анализе 2024 индивидуальный разброс 4–335 дней.",
+     "how": "Ждите 2–3 месяца, пропуск одного дня не катастрофа.",
+     "src": "Lally et al. 2010; Singh et al. 2024"
+    },
+    {
+     "name": "Жёсткие 90-минутные ультрадианные циклы",
+     "kind": "myth",
+     "desc": "Во сне циклы 90 минут установлены, днём доказательства противоречивы. Блоки 60–90 минут — практическая эвристика, а не закон физиологии. Реплика Macnamara & Maitra (2019) не воспроизвела главный вывод Ericsson 1993.",
+     "how": "Опирайтесь на сигналы усталости, а не на секундомер.",
+     "src": "Kleitman; Ericsson et al. 1993; Macnamara & Maitra 2019"
+    },
+    {
+     "name": "«Животные» хронотипы Бреуса как диагноз",
+     "kind": "myth",
+     "desc": "Лев, медведь, волк — переименованные утренний, промежуточный и вечерний типы; «дельфин» не хронотип. Независимой валидации классификации нет.",
+     "how": "Определяйте хронотип по MEQ или MCTQ.",
+     "src": "Breus (2016)"
+    },
+    {
+     "name": "Легенда Айви Ли и 25 000 долларов",
+     "kind": "myth",
+     "desc": "История, что Шваб заплатил Ли 25 000 долларов, — корпоративная легенда: первоисточник не найден, Fortune (2022) прямо называет её легендой. Механизмы метода при этом подтверждены.",
+     "how": "Метод хорош не потому, что за него «заплатили».",
+     "src": "Fortune (2022); J. Clear"
+    },
+    {
+     "name": "52/17 превратилось в 112/26",
+     "kind": "myth",
+     "desc": "Данные DeskTime наблюдательные и корпоративные; при повторном анализе в 2021 году получилось 112/26, что компания связывает с удалёнкой. «Магических чисел» нет.",
+     "how": "Подбирайте ритм под себя: важен принцип «фокус, затем полноценное восстановление».",
+     "src": "DeskTime (2014; 2021)"
+    },
+    {
+     "name": "MBTI-тип нестабилен",
+     "kind": "myth",
+     "desc": "Отдельные шкалы достаточно стабильны, а четырёхбуквенный тип нет: часто цитируется, что до 50 % людей получают другой тип через ~5 недель (старые данные), издатель приводит ретест шкал 0,81–0,86 (конфликт интересов). Соционика почти не валидирована.",
+     "how": "Используйте только язык J/P и не навешивайте ярлыки.",
+     "src": "Pittenger (1993, 2005); The Myers-Briggs Company"
+    },
+    {
+     "name": "Цифры NASA: +34 % производительности и +54 % бодрости",
+     "kind": "myth",
+     "desc": "Эти цифры приводит сам Розекинд и Sleep Foundation, но в доступном фрагменте первоисточника не найдены, поэтому они по вторичным источникам.",
+     "how": "Опирайтесь на подтверждённое: сон 10–26 минут повышает бодрость.",
+     "src": "Rosekind et al. (1994–1995), NASA TM"
+    },
+    {
+     "name": "«Рукописные заметки всегда лучше для памяти»",
+     "kind": "myth",
+     "desc": "Утверждение подтверждается лишь частично (дебаты вокруг Mueller & Oppenheimer, 2014, и последующих неудачных репликаций), опираться на него при выборе Bullet Journal не стоит.",
+     "how": "Выбирайте бумагу ради отсутствия уведомлений и рефлексии, не ради памяти.",
+     "src": "Mueller & Oppenheimer (2014)"
+    }
+   ],
+   "sub": "Что не подтвердилось, с цифрами"
+  }
+ ]
+};
+
+  var EVW = { A: 'сильная', B: 'умеренная', C: 'слабая' };
+  var reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var mobileMq = window.matchMedia('(max-width: 760px)');
+  function dur() { return reduceMq.matches ? 0 : 260; }
+  function $(id) { return document.getElementById(id); }
+
+  if (!window.d3) {
+    $('empty').hidden = false;
+    $('empty').textContent = 'Не удалось загрузить библиотеку d3. Проверьте соединение и обновите страницу.';
+    return;
+  }
+
+  /* ---------- подготовка данных ---------- */
+  var BY = new Map(), ALL = [];
+  (function prep(n, parent, id, depth) {
+    n.id = id; n.parent = parent; n.depth = depth;
+    n.letters = n.ev ? n.ev.split('/') : [];
+    n.lname = n.name.toLowerCase();
+    n.words = n.lname.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    n.ltext = ((n.desc || '') + ' ' + (n.how || '') + ' ' + (n.src || '')).toLowerCase();
+    n.twords = n.ltext.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    BY.set(id, n); ALL.push(n);
+    var lc = 0;
+    if (n.children && n.children.length) {
+      n.children.forEach(function (c, i) { prep(c, n, id + '.' + i, depth + 1); lc += c.lc; });
+    } else { lc = 1; }
+    n.lc = lc;
+  })(DATA, null, 'r', 0);
+  function isGroup(n) { return !!(n.children && n.children.length); }
+  var LEAVES = ALL.filter(function (n) { return !isGroup(n); });
+  var CNT = { A: 0, B: 0, C: 0 };
+  LEAVES.forEach(function (n) { n.letters.forEach(function (l) { CNT[l]++; }); });
+  $('meta').textContent = ALL.length + ' узлов · ' + LEAVES.length + ' листьев · 3 файла источников';
+  document.querySelectorAll('.chip[data-ev]').forEach(function (b) { b.querySelector('.n').textContent = CNT[b.dataset.ev]; });
+
+  /* ---------- состояние ---------- */
+  var state = { open: new Set(['r']), filter: new Set(), savedOpen: null, q: '', matches: [], matchSet: new Set(), anc: new Set(), mi: -1, selected: null, focusId: null, touched: false };
+  var prevPos = new Map(), curPos = new Map(), lastNodes = [];
+
+  function computeKeep() {
+    var f = state.filter;
+    (function k(n) {
+      if (!f.size) { n.keep = true; n.klc = n.lc; if (n.children) n.children.forEach(k); return; }
+      if (!isGroup(n)) { n.keep = n.letters.some(function (l) { return f.has(l); }); n.klc = n.keep ? 1 : 0; return; }
+      var s = 0; n.children.forEach(function (c) { k(c); s += c.klc; });
+      n.klc = s; n.keep = s > 0 || n === DATA;
+    })(DATA);
+  }
+
+  /* ---------- измерение подписей ---------- */
+  var ctx = document.createElement('canvas').getContext('2d');
+  var wcache = new Map();
+  var FONTS = {
+    root: '600 15px "Literata", "PT Serif", Georgia, serif',
+    branch: '600 14.5px "Golos Text", system-ui, sans-serif',
+    group: '600 13.5px "Golos Text", system-ui, sans-serif',
+    leaf: '400 13px "Golos Text", system-ui, sans-serif',
+    chip: '500 11px "IBM Plex Mono", ui-monospace, monospace',
+    sub: '400 11.5px "Golos Text", system-ui, sans-serif'
+  };
+  var MAXW = { root: 150, branch: 180, group: 214, leaf: 236 };
+  function tw(str, font) {
+    var k = font + '|' + str, w = wcache.get(k);
+    if (w == null) { ctx.font = font; w = ctx.measureText(str).width; wcache.set(k, w); }
+    return w;
+  }
+  function wrap(text, font, maxW, maxLines) {
+    var words = text.split(' '), lines = [], cur = '';
+    words.forEach(function (w) {
+      var t = cur ? cur + ' ' + w : w;
+      if (!cur || tw(t, font) <= maxW) cur = t; else { lines.push(cur); cur = w; }
+    });
+    lines.push(cur);
+    if (lines.length > maxLines) {
+      lines = lines.slice(0, maxLines);
+      var last = lines[maxLines - 1];
+      while (last.length > 1 && tw(last + '…', font) > maxW) last = last.slice(0, -1);
+      lines[maxLines - 1] = last.replace(/\s+$/, '') + '…';
+    }
+    return lines;
+  }
+  function measure(d) {
+    var n = d.data.n;
+    var kind = n.depth === 0 ? 'root' : n.depth === 1 ? 'branch' : isGroup(n) ? 'group' : 'leaf';
+    var font = FONTS[kind];
+    d.kind = kind;
+    d.lines = wrap(n.name, font, MAXW[kind], 3);
+    d.lw = Math.max.apply(null, d.lines.map(function (l) { return tw(l, font); }));
+    d.lh = kind === 'root' ? 19 : 16;
+    d.sub = null; d.subLh = 14;
+    if (kind === 'branch' && n.sub && !mobileMq.matches) {
+      d.sub = wrap(n.sub, FONTS.sub, 200, 2);
+      d.lw = Math.max(d.lw, Math.max.apply(null, d.sub.map(function (l) { return tw(l, FONTS.sub); })));
+    }
+    var blockH = d.lines.length * d.lh + (d.sub ? 3 + d.sub.length * d.subLh : 0);
+    d.blockH = blockH;
+    var mw;
+    if (kind === 'root') mw = 0;
+    else if (isGroup(n)) mw = kind === 'branch' ? 16 : 14;
+    else if (n.kind === 'myth') mw = 20;
+    else if (n.ev) mw = n.letters.length > 1 ? 10 + n.ev.length * 6.4 : 20;
+    else mw = 12;
+    d.mw = mw;
+    var collapsed = isGroup(n) && !d.children;
+    d.chip = collapsed ? '+' + n.klc : '';
+    d.cw = d.chip ? tw(d.chip, FONTS.chip) + 9 : 0;
+    if (kind === 'root') { d.lx = 11; d.w = d.lw + 22; d.h = d.lines.length * d.lh + 18; }
+    else { d.lx = mw + (mw ? 7 : 0); d.w = d.lx + d.lw + d.cw; d.h = Math.max(mobileMq.matches ? 30 : 24, blockH + 8); }
+  }
+
+  /* ---------- построение вида ---------- */
+  function buildView(n) {
+    var v = { n: n };
+    if (isGroup(n) && state.open.has(n.id)) {
+      var kids = n.children.filter(function (c) { return c.keep; }).map(buildView);
+      if (kids.length) v.children = kids;
+    }
+    return v;
+  }
+  function lp(sx, sy, tx, ty) {
+    var mx = (sx + tx) / 2;
+    return 'M' + sx.toFixed(1) + ',' + sy.toFixed(1) + 'C' + mx.toFixed(1) + ',' + sy.toFixed(1) + ' ' + mx.toFixed(1) + ',' + ty.toFixed(1) + ' ' + tx.toFixed(1) + ',' + ty.toFixed(1);
+  }
+  function nearest(map, id) {
+    var n = BY.get(id);
+    while (n) { if (map.has(n.id)) return map.get(n.id); n = n.parent; }
+    return null;
+  }
+
+  /* ---------- DOM / d3 ---------- */
+  var svg = d3.select('#svg'), layer = d3.select('#layer'), linkG = d3.select('#links'), nodeG = d3.select('#nodes');
+  var svgEl = $('svg');
+  var zoom = d3.zoom().scaleExtent([0.1, 3]).clickDistance(5)
+    .on('zoom', function (e) {
+      layer.attr('transform', e.transform);
+      if (e.sourceEvent) { state.touched = true; hideHint(); }
+    });
+  svg.call(zoom).on('dblclick.zoom', null);
+
+  function hideHint() { $('hint').hidden = true; }
+  function applyTransform(t, animate) {
+    if (animate && dur() > 0) svg.transition().duration(dur() + 60).call(zoom.transform, t);
+    else svg.interrupt().call(zoom.transform, t);
+  }
+  function fitTransform(minK) {
+    var W = svgEl.clientWidth, H = svgEl.clientHeight, pad = 26;
+    if (!lastNodes.length) return d3.zoomIdentity;
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    lastNodes.forEach(function (d) {
+      x0 = Math.min(x0, d.X); x1 = Math.max(x1, d.X + d.w);
+      y0 = Math.min(y0, d.Y - d.h / 2); y1 = Math.max(y1, d.Y + d.h / 2);
+    });
+    x0 -= 8; x1 += 8; y0 -= 8; y1 += 8;
+    var k = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0));
+    var kfit = k;
+    k = Math.max(minK || 0.12, Math.min(1.5, kfit));
+    if (k > kfit + 1e-6) {
+      /* дерево слишком большое для читаемого масштаба: показываем корень и ближайшие ветви */
+      return d3.zoomIdentity.translate(pad - k * x0, H / 2 - k * lastNodes[0].Y).scale(k);
+    }
+    var tx = (W - k * (x1 - x0)) / 2 - k * x0;
+    var ty = (H - k * (y1 - y0)) / 2 - k * y0;
+    return d3.zoomIdentity.translate(tx, ty).scale(k);
+  }
+
+  function nodeClass(d) {
+    var n = d.data.n, c = ['node', 't-' + d.kind];
+    if (isGroup(n)) c.push(d.children ? 'open' : 'closed'); else c.push('leaf');
+    if (n.letters.length === 1) c.push('ev-' + n.letters[0]);
+    if (state.matchSet.has(n.id)) c.push('match');
+    if (state.anc.has(n.id)) c.push('anc');
+    if (state.selected === n.id) c.push('sel');
+    return c.join(' ');
+  }
+
+  function paint(g, d) {
+    var n = d.data.n;
+    g.attr('class', nodeClass(d))
+      .attr('data-id', n.id)
+      .attr('aria-label', n.name + (n.ev ? ', доказательность ' + n.ev : '') + (isGroup(n) ? (d.children ? ', раскрыто' : ', свёрнуто') : ''));
+    if (isGroup(n)) g.attr('aria-expanded', d.children ? 'true' : 'false'); else g.attr('aria-expanded', null);
+    g.select('title').text(n.name + (n.ev ? ' · ' + n.ev : ''));
+    var bg = g.select('rect.bg');
+    if (d.kind === 'root') bg.attr('class', 'bg rootbg').attr('x', 0).attr('width', d.w).attr('rx', 5);
+    else bg.attr('class', 'bg').attr('x', -5).attr('width', d.w + 10).attr('rx', 4);
+    bg.attr('y', -d.h / 2).attr('height', d.h);
+
+    var mk = g.select('g.mk'); mk.selectAll('*').remove();
+    if (d.kind !== 'root') {
+      if (isGroup(n)) {
+        mk.append('circle').attr('class', 'gm').attr('cx', d.mw / 2 - 1).attr('cy', 0).attr('r', d.kind === 'branch' ? 6 : 5);
+      } else if (n.kind === 'myth') {
+        mk.append('rect').attr('class', 'pill').attr('x', 0).attr('y', -8).attr('width', d.mw).attr('height', 16).attr('rx', 3);
+        mk.append('text').attr('class', 'pt').attr('x', d.mw / 2).attr('y', 0.5).text('×');
+      } else if (n.ev) {
+        mk.append('rect').attr('class', 'pill').attr('x', 0).attr('y', -8).attr('width', d.mw).attr('height', 16).attr('rx', 3);
+        var t = mk.append('text').attr('class', 'pt').attr('x', d.mw / 2).attr('y', 0.5);
+        if (n.letters.length === 1) t.text(n.ev);
+        else n.letters.forEach(function (l, i) {
+          if (i) t.append('tspan').attr('class', 'sl').text('/');
+          t.append('tspan').attr('class', 'l-' + l).text(l);
+        });
+      } else {
+        mk.append('circle').attr('class', 'nodot').attr('cx', 5).attr('cy', 0).attr('r', 3.5);
+      }
+    }
+    var lbl = g.select('text.lbl');
+    var top = -d.blockH / 2;
+    lbl.attr('x', d.lx).attr('y', top + d.lh / 2);
+    lbl.selectAll('tspan').remove();
+    d.lines.forEach(function (ln, i) { lbl.append('tspan').attr('x', d.lx).attr('dy', i ? d.lh : 0).text(ln); });
+    var st = g.select('text.subtxt');
+    st.selectAll('tspan').remove();
+    if (d.sub) {
+      st.attr('x', d.lx).attr('y', top + d.lines.length * d.lh + 3 + d.subLh / 2);
+      d.sub.forEach(function (ln, i) { st.append('tspan').attr('x', d.lx).attr('dy', i ? d.subLh : 0).text(ln); });
+    }
+    g.select('text.chiptxt').attr('x', d.lx + d.lw + 8).attr('y', 0).text(d.chip);
+  }
+
+  function render(opts) {
+    opts = opts || {};
+    computeKeep();
+    var root = d3.hierarchy(buildView(DATA), function (v) { return v.children; });
+    var nodes0 = root.descendants();
+    nodes0.forEach(measure);
+    var UNIT = 26;
+    d3.tree().nodeSize([UNIT, 1]).separation(function (a, b) {
+      return ((a.h + b.h) / 2 + 7) / UNIT * (a.parent === b.parent ? 1 : 1.4);
+    })(root);
+    var maxW = [];
+    nodes0.forEach(function (d) { maxW[d.depth] = Math.max(maxW[d.depth] || 0, d.w); });
+    var colX = [0];
+    for (var i = 1; i < maxW.length; i++) colX[i] = colX[i - 1] + maxW[i - 1] + (mobileMq.matches ? 38 : 50);
+    nodes0.forEach(function (d) { d.X = colX[d.depth]; d.Y = d.x; });
+    var nodes = nodes0, links = root.links();
+    var newPos = new Map();
+    nodes.forEach(function (d) { newPos.set(d.data.n.id, { X: d.X, Y: d.Y, w: d.w }); });
+    var DD = opts.noanim ? 0 : dur();
+
+    /* связи */
+    var ls = linkG.selectAll('path.link').data(links, function (d) { return d.target.data.n.id; });
+    ls.exit().transition().duration(DD).attr('d', function (d) {
+      var p = nearest(newPos, d.target.data.n.id);
+      return p ? lp(p.X + p.w + 4, p.Y, p.X + p.w + 4, p.Y) : lp(0, 0, 0, 0);
+    }).remove();
+    var lEnter = ls.enter().append('path').attr('class', 'link').attr('d', function (d) {
+      var p = nearest(prevPos, d.target.data.n.id) || { X: d.source.X, Y: d.source.Y, w: d.source.w };
+      return lp(p.X + p.w + 4, p.Y, p.X + p.w + 4, p.Y);
+    });
+    lEnter.merge(ls).transition().duration(DD).attr('d', function (d) {
+      return lp(d.source.X + d.source.w + 4, d.source.Y, d.target.X - 5, d.target.Y);
+    });
+
+    /* узлы */
+    var ns = nodeG.selectAll('g.node').data(nodes, function (d) { return d.data.n.id; });
+    ns.exit().transition().duration(DD).attr('opacity', 0)
+      .attr('transform', function (d) { var p = nearest(newPos, d.data.n.id); return p ? 'translate(' + p.X + ',' + p.Y + ')' : null; })
+      .remove();
+    var enter = ns.enter().append('g').attr('tabindex', 0).attr('role', 'button')
+      .attr('transform', function (d) {
+        var p = nearest(prevPos, d.data.n.id) || d;
+        var x = p.X != null ? p.X : d.X, y = p.Y != null ? p.Y : d.Y;
+        return 'translate(' + x + ',' + y + ')';
+      })
+      .attr('opacity', 0);
+    enter.append('title');
+    enter.append('rect').attr('class', 'bg');
+    enter.append('g').attr('class', 'mk');
+    enter.append('text').attr('class', 'lbl');
+    enter.append('text').attr('class', 'subtxt');
+    enter.append('text').attr('class', 'chiptxt');
+    enter.on('click', function (e, d) { activate(d, false); })
+      .on('keydown', onKey)
+      .on('focus', function (e, d) { state.focusId = d.data.n.id; });
+    var all = enter.merge(ns);
+    all.each(function (d) { paint(d3.select(this), d); });
+    all.transition().duration(DD).attr('transform', function (d) { return 'translate(' + d.X + ',' + d.Y + ')'; }).attr('opacity', 1);
+    all.order();
+
+    /* состояния */
+    svg.classed('searching', state.matches.length > 0);
+    lastNodes = nodes; prevPos = curPos = newPos;
+    $('empty').hidden = !(state.filter.size && nodes.length <= 1);
+
+    /* якорь: узел под пальцем остаётся на месте */
+    if (opts.anchor && opts.anchorPrev && newPos.has(opts.anchor)) {
+      var cur = newPos.get(opts.anchor), t = d3.zoomTransform(svgEl);
+      t = t.translate(opts.anchorPrev.X - cur.X, opts.anchorPrev.Y - cur.Y);
+      if (opts.reveal) {
+        var hd = nodes.filter(function (d) { return d.data.n.id === opts.anchor; })[0];
+        if (hd && hd.children) {
+          var bx = { x0: hd.X, x1: hd.X + hd.w, y0: hd.Y - hd.h / 2, y1: hd.Y + hd.h / 2 };
+          hd.children.forEach(function (c) {
+            bx.x1 = Math.max(bx.x1, c.X + c.w); bx.y0 = Math.min(bx.y0, c.Y - c.h / 2); bx.y1 = Math.max(bx.y1, c.Y + c.h / 2);
+          });
+          t = fitBox(t, bx, true);
+        }
+      }
+      applyTransform(t, true);
+    }
+    if (opts.fit) applyTransform(fitTransform(opts.minK), !opts.fitInstant);
+    if (opts.focus) restoreFocus();
+  }
+
+  function restoreFocus() {
+    if (!state.focusId) return;
+    var el = nodeG.select('g.node[data-id="' + state.focusId + '"]').node();
+    if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } }
+  }
+
+  /* ---------- действия ---------- */
+  var viaKey = false;
+  function activate(d, fromKey) {
+    var n = d.data.n; viaKey = !!fromKey; state.touched = true; hideHint();
+    if (isGroup(n)) toggle(n, fromKey); else selectLeaf(n);
+  }
+  function toggle(n, keepFocus) {
+    var prev = prevPos.get(n.id);
+    if (state.open.has(n.id)) state.open.delete(n.id); else state.open.add(n.id);
+    state.focusId = n.id;
+    render({ anchor: n.id, anchorPrev: prev, focus: keepFocus, reveal: state.open.has(n.id) });
+  }
+  function selectLeaf(n) {
+    state.selected = n.id;
+    nodeG.selectAll('g.node').attr('class', nodeClass);
+    openPanel(n);
+    requestAnimationFrame(function () { revealNode(n.id); });
+  }
+  function fitBox(t, b, allowZoom) {
+    var W = svgEl.clientWidth, H = svgEl.clientHeight, panel = $('panel'), m = 16;
+    var Hv = (mobileMq.matches && !panel.hidden) ? Math.max(120, H - panel.offsetHeight) : H;
+    var k = t.k, bw = b.x1 - b.x0, bh = b.y1 - b.y0;
+    if (allowZoom && bw * k > W - 2 * m) k = Math.min(k, Math.max((W - 2 * m) / bw, 0.6));
+    var sx = t.applyX(b.x0), sy = t.applyY(b.y0);
+    var tx = sx - k * b.x0, ty = sy - k * b.y0;
+    var l = sx, r = sx + k * bw, tp = sy, bt = sy + k * bh, dx = 0, dy = 0;
+    if (r - l > W - 2 * m) dx = m - l; else if (r > W - m) dx = (W - m) - r; else if (l < m) dx = m - l;
+    if (bt - tp > Hv - 2 * m) dy = m - tp; else if (bt > Hv - m) dy = (Hv - m) - bt; else if (tp < m) dy = m - tp;
+    return d3.zoomIdentity.translate(tx + dx, ty + dy).scale(k);
+  }
+  function revealNode(id) {
+    var p = curPos.get(id); if (!p) return;
+    var t = d3.zoomTransform(svgEl);
+    var t2 = fitBox(t, { x0: p.X - 6, x1: p.X + p.w + 6, y0: p.Y - 15, y1: p.Y + 15 }, false);
+    if (Math.abs(t2.x - t.x) < 0.5 && Math.abs(t2.y - t.y) < 0.5) return;
+    state.touched = true;
+    applyTransform(t2, true);
+  }
+  function centerOn(id) {
+    var p = curPos.get(id); if (!p) return;
+    var t = d3.zoomTransform(svgEl), W = svgEl.clientWidth, H = svgEl.clientHeight;
+    var k = Math.max(t.k, 0.85);
+    state.touched = true;
+    applyTransform(d3.zoomIdentity.translate(W / 2 - k * (p.X + p.w / 2), H / 2 - k * p.Y).scale(k), true);
+  }
+
+  function onKey(e, d) {
+    var n = d.data.n, key = e.key;
+    if (key === 'Enter' || key === ' ') { e.preventDefault(); activate(d, true); return; }
+    if (key === 'Escape') { closePanel(true); return; }
+    var move = function (id) { if (!id) return; state.focusId = id; restoreFocus(); revealNode(id); };
+    if (key === 'ArrowRight') {
+      e.preventDefault();
+      if (isGroup(n)) { if (!state.open.has(n.id)) toggle(n, true); else if (d.children) move(d.children[0].data.n.id); }
+    } else if (key === 'ArrowLeft') {
+      e.preventDefault();
+      if (isGroup(n) && state.open.has(n.id) && n.depth > 0) toggle(n, true);
+      else if (n.parent) move(n.parent.id);
+    } else if (key === 'ArrowDown' || key === 'ArrowUp') {
+      e.preventDefault();
+      var col = lastNodes.filter(function (x) { return x.depth === d.depth; }).sort(function (a, b) { return a.Y - b.Y; });
+      var i = col.indexOf(d), j = key === 'ArrowDown' ? i + 1 : i - 1;
+      if (col[j]) move(col[j].data.n.id);
+    }
+  }
+
+  /* ---------- карточка ---------- */
+  function setText(id, txt) { var el = $(id); el.textContent = txt || ''; return !!txt; }
+  function openPanel(n) {
+    var path = [], x = n.parent;
+    while (x) { path.unshift(x.name); x = x.parent; }
+    setText('pCrumb', path.join(' › '));
+    setText('pTitle', n.name);
+    var b = $('pBadges'); b.textContent = '';
+    var note = $('pNote');
+    function badge(cls, k, txt) {
+      var s = document.createElement('span'); s.className = 'bdg ' + cls;
+      var i = document.createElement('b'); i.textContent = k; s.appendChild(i);
+      s.appendChild(document.createTextNode(txt)); b.appendChild(s);
+    }
+    note.hidden = true;
+    if (n.kind === 'myth') badge('bn', '×', 'Миф или развенчание');
+    else if (n.ev) {
+      n.letters.forEach(function (l) { badge('b' + l.toLowerCase(), l, EVW[l]); });
+      if (n.letters.length > 1) { note.hidden = false; note.textContent = 'Смешанная оценка ' + n.ev + ': уровень зависит от аспекта, подробности в описании.'; }
+    } else badge('bn', '·', 'Оценка в источнике не дана');
+    setText('pDesc', n.desc); $('sDesc').hidden = !n.desc;
+    setText('pHow', n.how); $('sHow').hidden = !n.how;
+    setText('pSrc', n.src); $('sSrc').hidden = !n.src;
+    $('panel').hidden = false;
+    $('stage').classList.add('has-panel');
+    $('panel').scrollTop = 0;
+    if (viaKey) $('pTitle').focus();
+  }
+  function closePanel(refocus) {
+    if ($('panel').hidden) return;
+    $('panel').hidden = true;
+    $('stage').classList.remove('has-panel');
+    state.selected = null;
+    nodeG.selectAll('g.node').attr('class', nodeClass);
+    if (refocus) restoreFocus();
+  }
+  $('pClose').addEventListener('click', function () { closePanel(true); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('panel').hidden && document.activeElement !== $('q')) closePanel(true);
+  });
+
+  /* ---------- фильтр доказательности ---------- */
+  function syncChips() {
+    var f = state.filter;
+    $('fAll').setAttribute('aria-pressed', f.size ? 'false' : 'true');
+    document.querySelectorAll('.chip[data-ev]').forEach(function (b) { b.setAttribute('aria-pressed', f.has(b.dataset.ev) ? 'true' : 'false'); });
+  }
+  function setFilter(letter) {
+    var f = state.filter, was = f.size > 0;
+    if (letter === null) f.clear();
+    else if (!f.size) f.add(letter);
+    else if (f.has(letter)) f.delete(letter); else f.add(letter);
+    if (f.size === 3) f.clear();
+    var now = f.size > 0;
+    computeKeep();
+    if (now) {
+      if (!was) state.savedOpen = new Set(state.open);
+      state.open = new Set();
+      ALL.forEach(function (n) { if (isGroup(n) && n.keep) state.open.add(n.id); });
+    } else if (was) {
+      state.open = state.savedOpen || new Set(['r']); state.savedOpen = null;
+    }
+    syncChips();
+    closePanel(false);
+    state.touched = false;
+    runSearch(state.q, false, true);
+  }
+  $('fAll').addEventListener('click', function () { setFilter(null); });
+  document.querySelectorAll('.chip[data-ev]').forEach(function (b) { b.addEventListener('click', function () { setFilter(b.dataset.ev); }); });
+
+  /* ---------- поиск ---------- */
+  function runSearch(q, jump, fit) {
+    q = (q || '').trim().toLowerCase(); state.q = q;
+    computeKeep();
+    state.matches = []; state.matchSet = new Set(); state.anc = new Set(); state.mi = -1;
+    if (q) {
+      var toks = q.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+      var hit = function (words) {
+        return toks.every(function (t) { return words.some(function (w) { return w.indexOf(t) === 0; }); });
+      };
+      var by = toks.length ? ALL.filter(function (n) { return n.depth > 0 && n.keep && hit(n.words); }) : [];
+      if (!by.length && toks.length) by = ALL.filter(function (n) { return n.depth > 0 && n.keep && !isGroup(n) && hit(n.twords); });
+      state.matches = by;
+      by.forEach(function (n) {
+        state.matchSet.add(n.id);
+        var p = n.parent;
+        while (p) { state.anc.add(p.id); if (isGroup(p)) state.open.add(p.id); p = p.parent; }
+      });
+    }
+    var c = $('cnt');
+    c.textContent = q ? (state.matches.length ? state.matches.length + ' найд.' : 'нет') : '';
+    render({ fit: !!fit, minK: 0.45, fitInstant: false, noanim: false });
+    if (jump && state.matches.length) { state.mi = 0; setTimeout(function () { centerOn(state.matches[0].id); }, 30); }
+  }
+  var qt = null;
+  $('q').addEventListener('input', function () {
+    clearTimeout(qt);
+    var v = this.value;
+    qt = setTimeout(function () { runSearch(v, true, false); }, 160);
+  });
+  $('q').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!state.matches.length) return;
+      state.mi = (state.mi + 1) % state.matches.length;
+      centerOn(state.matches[state.mi].id);
+    } else if (e.key === 'Escape') {
+      this.value = ''; runSearch('', false, false);
+    }
+  });
+
+  /* ---------- кнопки ---------- */
+  $('bExpand').addEventListener('click', function () {
+    state.open = new Set(); ALL.forEach(function (n) { if (isGroup(n)) state.open.add(n.id); });
+    state.touched = false; closePanel(false); render({ fit: true, minK: 0.45 });
+  });
+  $('bCollapse').addEventListener('click', function () {
+    state.open = new Set(['r']); state.touched = false; closePanel(false);
+    render({ fit: true });
+  });
+  $('bReset').addEventListener('click', function () { state.touched = false; applyTransform(fitTransform(0.08), true); });
+  $('zIn').addEventListener('click', function () { svg.transition().duration(dur()).call(zoom.scaleBy, 1.35); });
+  $('zOut').addEventListener('click', function () { svg.transition().duration(dur()).call(zoom.scaleBy, 1 / 1.35); });
+
+  if (mobileMq.addEventListener) mobileMq.addEventListener('change', function () { wcache.clear(); render({ noanim: true, fit: !state.touched, fitInstant: true }); });
+
+  /* ---------- запуск ---------- */
+  var started = false;
+  function start() {
+    if (started) return; started = true;
+    computeKeep();
+    render({ fit: true, fitInstant: true, noanim: true });
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(function () { if (!state.touched) applyTransform(fitTransform(), false); }).observe($('mapwrap'));
+    }
+    if (document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingdone', function () {
+        wcache.clear(); render({ noanim: true, fit: !state.touched, fitInstant: true });
+      });
+    }
+  }
+  var loads = ['600 15px Literata', '600 14px "Golos Text"', '400 13px "Golos Text"', '500 11px "IBM Plex Mono"'];
+  var fontsReady = (document.fonts && document.fonts.load)
+    ? Promise.all(loads.map(function (f) { return document.fonts.load(f, 'Аб'); })).catch(function () {})
+    : Promise.resolve();
+  Promise.race([fontsReady, new Promise(function (r) { setTimeout(r, 1800); })]).then(start);
+})();
+</script>
