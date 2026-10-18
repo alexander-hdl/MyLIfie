@@ -1,0 +1,24 @@
+# Секреты и локальные настройки
+.env
+.env.*
+!.env.example
+
+# Зависимости
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Результаты сборки
+dist/
+build/
+coverage/
+*.log
+
+# Редакторы и ОС
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
